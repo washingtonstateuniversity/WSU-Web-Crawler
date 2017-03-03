@@ -1,0 +1,30 @@
+{
+  "name": "wsu-web-crawler",
+  "version": "0.0.1",
+  "description": "Crawls a given domain and stores results in Elasticsearch",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/washingtonstateuniversity/wsu-web-crawler.git"
+  },
+  "author": "Washington State University",
+  "license": "GPL-2.0+",
+  "bugs": {
+    "url": "https://github.com/washingtonstateuniversity/wsu-web-crawler/issues"
+  },
+  "homepage": "https://github.com/washingtonstateuniversity/wsu-web-crawler#readme",
+  "dependencies": {
+    "crawler": "^1.0.3",
+    "dotenv": "^4.0.0",
+    "elasticsearch": "^12.1.3",
+    "url": "^0.11.0"
+  },
+  "devDependencies": {
+    "grunt": "^1.0.1",
+    "grunt-contrib-jshint": "^1.1.0",
+    "grunt-jscs": "^3.0.1"
+  }
+}
