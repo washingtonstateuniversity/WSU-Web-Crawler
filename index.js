@@ -70,8 +70,8 @@ var c = new Crawler( {
 						return;
 					}
 
-					if ( -1 >= scanned_urls.indexOf( url.href ) && -1 >= scan_urls.indexOf( url.href ) ) {
-						scan_urls.push( url.href );
+					if ( -1 >= scanned_urls.indexOf( url ) && -1 >= scan_urls.indexOf( url ) ) {
+						scan_urls.push( url );
 					}
 				}
 			} );
