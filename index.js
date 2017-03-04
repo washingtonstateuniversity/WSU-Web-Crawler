@@ -4,6 +4,45 @@ var allowed_domains = [ "wsu.edu" ];
 var scan_urls = [ "https://wsu.edu/" ];
 var scanned_urls = [];
 
+function build_href_url( href, source_uri ) {
+	var url = parse_url.parse( href );
+
+	// Catch tel:5093355555, mailto:user@email.edu, and javascript:window.print()
+	if ( 'tel:' === url.protocol || 'mailto:' === url.protocol || 'javascript:' === url.protocol ) {
+		return false;
+	}
+
+	// Catch #
+	if ( null === url.protocol && null === url.hostname && null === url.path ) {
+		return false;
+	}
+
+	// Rebuild /relative/path/
+	if ( null === url.protocol && null === url.hostname ) {
+		var build_url = parse_url.parse( source_uri );
+		url = parse_url.parse( build_url.protocol + "//" + build_url.hostname + url.path );
+	}
+
+	var root_domain_parts = {};
+	root_domain_parts.full = url.hostname.split( "." );
+	root_domain_parts.tld = root_domain_parts.full.pop();
+	root_domain_parts.top = root_domain_parts.full.pop();
+	var top_domain = root_domain_parts.top + "." + root_domain_parts.tld;
+
+	if ( -1 >= allowed_domains.indexOf( top_domain ) ) {
+		//console.log( "Skipping top level domain " + top_domain );
+		return false;
+	}
+
+	if ( 'parking.wsu.edu' === url.hostname || 'www.parking.wsu.edu' === url.hostname ) {
+		return false;
+	}
+
+	return url.href;
+}
+
+exports.build_href_url = build_href_url;
+
 var c = new Crawler({
     maxConnections : 10,
     // This will be called for each crawled page
@@ -19,36 +58,9 @@ var c = new Crawler({
 
 			$( "a" ).each( function( index, value ) {
 				if ( undefined !== value.attribs.href && '#' !== value.attribs.href ) {
-					var url = parse_url.parse( value.attribs.href );
+					var url = build_href_url( value.attribs.href, res.options.uri );
 
-					// Catch tel:5093355555, mailto:user@email.edu, and javascript:window.print()
-					if ( 'tel:' === url.protocol || 'mailto:' === url.protocol || 'javascript:' === url.protocol ) {
-						return;
-					}
-
-					// Catch #
-					if ( null === url.protocol && null === url.hostname && null === url.path ) {
-						return;
-					}
-
-					// Rebuild /relative/path/
-					if ( null === url.protocol && null === url.hostname ) {
-						var build_url = parse_url.parse( res.options.uri );
-						url = parse_url.parse( build_url.protocol + "//" + build_url.hostname + url.path );
-					}
-
-					var root_domain_parts = {};
-					root_domain_parts.full = url.hostname.split( "." );
-					root_domain_parts.tld = root_domain_parts.full.pop();
-					root_domain_parts.top = root_domain_parts.full.pop();
-					var top_domain = root_domain_parts.top + "." + root_domain_parts.tld;
-
-					if ( -1 >= allowed_domains.indexOf( top_domain ) ) {
-						//console.log( "Skipping top level domain " + top_domain );
-						return;
-					}
-
-					if ( 'parking.wsu.edu' === url.hostname || 'www.parking.wsu.edu' === url.hostname ) {
+					if ( false === url ) {
 						return;
 					}
 
