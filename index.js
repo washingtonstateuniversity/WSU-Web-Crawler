@@ -66,6 +66,12 @@ var c = new Crawler( {
             console.log( error );
 			return;
         } else {
+			if ( "undefined" === typeof res.$ ) {
+				scanned_urls.push( res.options.uri );
+				console.log( "Skip scanning non HTML URL " + res.options.uri );
+				return;
+			}
+
             var $ = res.$;
 
 			console.log( "Scanning " + res.options.uri );
