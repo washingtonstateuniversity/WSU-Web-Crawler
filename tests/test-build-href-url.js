@@ -79,3 +79,10 @@ test( "A hash plus text URL should report as false", function( t ) {
 	t.false( url );
 	t.end();
 } );
+
+test( "A flagged domain should report as false", function( t ) {
+	var url = app.build_href_url( "https://parking.wsu.edu", source_uri );
+
+	t.false( url );
+	t.end();
+} );

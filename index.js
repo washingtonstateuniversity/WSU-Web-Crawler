@@ -2,6 +2,7 @@ var Crawler = require( "crawler" );
 var parse_url = require( "url" );
 
 var allowed_domains = [ "wsu.edu" ];
+var flagged_domains = [ "parking.wsu.edu", "www.parking.wsu.edu" ];
 var scan_urls = [ "https://wsu.edu/" ];
 var scanned_urls = [];
 
@@ -32,11 +33,7 @@ function build_href_url( href, source_uri ) {
 	root_domain_parts.top = root_domain_parts.full.pop();
 	var top_domain = root_domain_parts.top + "." + root_domain_parts.tld;
 
-	if ( -1 >= allowed_domains.indexOf( top_domain ) ) {
-		return false;
-	}
-
-	if ( "parking.wsu.edu" === url.hostname || "www.parking.wsu.edu" === url.hostname ) {
+	if ( -1 >= allowed_domains.indexOf( top_domain ) || -1 < flagged_domains.indexOf( url.hostname ) ) {
 		return false;
 	}
 
