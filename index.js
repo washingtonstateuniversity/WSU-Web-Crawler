@@ -18,9 +18,10 @@ function build_href_url( href, source_uri ) {
 	}
 
 	// Rebuild /relative/path/
-	if ( null === url.protocol && null === url.hostname ) {
+	if ( null === url.protocol ) {
 		var build_url = parse_url.parse( source_uri );
-		url = parse_url.parse( build_url.protocol + "//" + build_url.hostname + url.path );
+		url.path = url.path.replace( /^\//g, '');
+		url = parse_url.parse( build_url.protocol + "//" + build_url.hostname + "/" + url.path );
 	}
 
 	var root_domain_parts = {};
