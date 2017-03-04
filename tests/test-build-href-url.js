@@ -86,3 +86,24 @@ test( "A flagged domain should report as false", function( t ) {
 	t.false( url );
 	t.end();
 } );
+
+test( "A full URL with flagged file extension should report as false.", function( t ) {
+	var url = app.build_href_url( "https://wsu.edu/files/2012.pdf", source_uri );
+
+	t.false( url );
+	t.end();
+} );
+
+test( "A full URL with flagged file extension and query string should report as false.", function( t ) {
+	var url = app.build_href_url( "https://wsu.edu/files/2012.pdf?abc=123", source_uri );
+
+	t.false( url );
+	t.end();
+} );
+
+test( "A relative URL with flagged file extension should report as false.", function( t ) {
+	var url = app.build_href_url( "2012.pdf", source_uri );
+
+	t.false( url );
+	t.end();
+} );

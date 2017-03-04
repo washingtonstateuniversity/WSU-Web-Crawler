@@ -7,6 +7,9 @@ var allowed_domains = [ "wsu.edu" ];
 // These subdomains are flagged to not be scanned.
 var flagged_domains = [ "parking.wsu.edu", "www.parking.wsu.edu" ];
 
+// These file extensions are flagged to not be scanned.
+var flagged_extensions = [ "pdf", "jpg", "jpeg", "gif", "xls", "doc", "png" ];
+
 // Tracks the list of URLs to be scanned.
 var scan_urls = [ "https://wsu.edu/" ];
 
@@ -26,6 +29,12 @@ function build_href_url( href, source_uri ) {
 	// Catch #
 	if ( null === url.protocol && null === url.hostname && null === url.path ) {
 		return false;
+	}
+
+	if ( null !== url.pathname ) {
+		if ( -1 < flagged_extensions.indexOf( url.pathname.split( "." ).pop() ) ) {
+			return false;
+		}
 	}
 
 	// Rebuild /relative/path/
