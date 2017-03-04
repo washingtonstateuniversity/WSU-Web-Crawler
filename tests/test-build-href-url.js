@@ -38,6 +38,13 @@ test( "A filename without a protocol should be treated as a relative path.", fun
 	t.end();
 } );
 
+test( "A single slash should be treated as a relative path.", function( t ) {
+	var url = app.build_href_url( "/", source_uri );
+
+	t.equal( url, "https://wsu.edu/" );
+	t.end();
+} );
+
 test( "A telephone URL should report as false", function( t ) {
 	var url = app.build_href_url( "tel:15095551234", source_uri );
 
