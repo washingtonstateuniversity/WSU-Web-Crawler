@@ -1,11 +1,19 @@
 var Crawler = require( "crawler" );
 var parse_url = require( "url" );
 
+// These top level domains are allowed to be scanned by the crawler.
 var allowed_domains = [ "wsu.edu" ];
+
+// These subdomains are flagged to not be scanned.
 var flagged_domains = [ "parking.wsu.edu", "www.parking.wsu.edu" ];
+
+// Tracks the list of URLs to be scanned.
 var scan_urls = [ "https://wsu.edu/" ];
+
+// Tracks the list of URLs scanned.
 var scanned_urls = [];
 
+// Processes an href attribute from an anchor into a valid URL.
 function build_href_url( href, source_uri ) {
 	var url = parse_url.parse( href );
 
