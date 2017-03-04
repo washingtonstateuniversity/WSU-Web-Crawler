@@ -16,6 +16,9 @@ var scan_urls = [ "https://wsu.edu/" ];
 // Tracks the list of URLs scanned.
 var scanned_urls = [];
 
+// Number of URLs to scan before quitting. 0 indicates scan until done.
+var scan_limit = 0;
+
 // Processes an href attribute from an anchor into a valid URL.
 function build_href_url( href, source_uri ) {
 	var url = parse_url.parse( href );
@@ -95,7 +98,8 @@ var c = new Crawler( {
 			console.log( "Scanned URLs: " + scanned_urls.length );
 			console.log( "Remaining URLs to scan: " + scan_urls.length );
 
-			if ( 10000 < scan_urls.length ) {
+			// Stop scanning when no URLs are left to scan or when the limit has been reached.
+			if ( 0 === scan_urls.length || ( 0 !== scan_limit && scan_limit < scan_urls.length ) ) {
 				dumplogs();
 				return;
 			} else {
