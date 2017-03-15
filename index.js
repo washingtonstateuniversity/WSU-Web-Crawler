@@ -1,5 +1,4 @@
 var Crawler = require( "crawler" );
-var parse_url = require( "url" );
 var parse_href = require( "./lib/parse-href" );
 
 // Tracks the list of URLs to be scanned.
