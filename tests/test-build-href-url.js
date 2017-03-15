@@ -1,7 +1,18 @@
 var test = require('tape');
-var app = require( "../lib/parse-href" );
+var ParseHref = require( "../lib/parse-href" );
 
 var source_uri = "https://wsu.edu";
+
+var app = new ParseHref( {
+	// These top level domains are allowed to be scanned by the crawler.
+	allowed_domains: [ "wsu.edu" ],
+
+	// These subdomains are flagged to not be scanned.
+	flagged_domains: [ "parking.wsu.edu", "www.parking.wsu.edu" ],
+
+	// These file extensions are flagged to not be scanned.
+	flagged_extensions: [ "pdf", "jpg", "jpeg", "gif", "xls", "doc", "png" ]
+} );
 
 test( "A standard URL from an allowed top level domain", function( t ) {
 	var url = app.get_url( "https://wsu.edu/about/", source_uri );
