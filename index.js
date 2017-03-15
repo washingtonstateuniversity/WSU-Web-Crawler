@@ -47,7 +47,7 @@ var c = new Crawler( {
 			console.log( "Remaining URLs to scan: " + scan_urls.length );
 
 			// Stop scanning when no URLs are left to scan or when the limit has been reached.
-			if ( 0 === scan_urls.length || ( 0 !== scan_limit && scan_limit < scan_urls.length ) ) {
+			if ( 0 === scan_urls.length || ( 0 !== scan_limit && scan_limit < scanned_urls.length ) ) {
 				dumplogs();
 				return;
 			} else {
