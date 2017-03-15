@@ -1,14 +1,6 @@
 var Crawler = require( "crawler" );
 var parse_url = require( "url" );
-
-// These top level domains are allowed to be scanned by the crawler.
-var allowed_domains = [ "wsu.edu" ];
-
-// These subdomains are flagged to not be scanned.
-var flagged_domains = [ "parking.wsu.edu", "www.parking.wsu.edu" ];
-
-// These file extensions are flagged to not be scanned.
-var flagged_extensions = [ "pdf", "jpg", "jpeg", "gif", "xls", "doc", "png" ];
+var parse_href = require( "./lib/parse-href" );
 
 // Tracks the list of URLs to be scanned.
 var scan_urls = [ "https://wsu.edu/" ];
@@ -39,7 +31,7 @@ var c = new Crawler( {
 
 			$( "a" ).each( function( index, value ) {
 				if ( undefined !== value.attribs.href && "#" !== value.attribs.href ) {
-					var url = build_href_url( value.attribs.href, res.options.uri );
+					var url = parse_href.get_url( value.attribs.href, res.options.uri );
 
 					if ( false === url ) {
 						return;
