@@ -1,5 +1,5 @@
 var test = require('tape');
-var app = require( "../index" );
+var app = require( "../lib/parse-href" );
 
 var source_uri = "https://wsu.edu";
 
