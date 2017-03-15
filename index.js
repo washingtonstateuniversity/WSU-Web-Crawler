@@ -11,6 +11,7 @@ var scanned_urls = [];
 var scan_limit = 3;
 
 var parse_href = new ParseHref( {
+
 	// These top level domains are allowed to be scanned by the crawler.
 	allowed_domains: [ "wsu.edu" ],
 

@@ -4,6 +4,7 @@ var ParseHref = require( "../lib/parse-href" );
 var source_uri = "https://wsu.edu";
 
 var app = new ParseHref( {
+
 	// These top level domains are allowed to be scanned by the crawler.
 	allowed_domains: [ "wsu.edu" ],
 
