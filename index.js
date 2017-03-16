@@ -1,4 +1,5 @@
 var Crawler = require( "crawler" );
+var Promise = require( "promise" );
 var parse_url = require( "url" );
 var ParseHref = require( "./lib/parse-href" );
 var es = require( "elasticsearch" );
@@ -18,7 +19,7 @@ var store_urls = [];
 var stored_urls = [];
 
 // Number of URLs to scan before quitting. 0 indicates scan until done.
-var scan_limit = 4;
+var scan_limit = 15;
 
 var parse_href = new ParseHref( {
 
@@ -65,7 +66,7 @@ var scanNext = function() {
 
 var queueNext = function() {
 	setTimeout( scanNext, 1500 );
-}
+};
 
 var handleCrawlResult = function( res ) {
 	var $ = res.$;
@@ -107,11 +108,11 @@ var handleCrawlResult = function( res ) {
 	} );
 };
 
-var checkURLStore = function( response ) {
+var checkURLStore = function() {
 	return new Promise( function( resolve, reject ) {
 		elastic.search( {
 			index: process.env.ES_URL_INDEX,
-			type: 'url',
+			type: "url",
 			body: {
 				size: 300,
 				query: {
@@ -124,14 +125,14 @@ var checkURLStore = function( response ) {
 					}
 				}
 			}
-		} ).then( function ( resp ) {
+		} ).then( function( resp ) {
 			if ( 0 !== resp.hits.hits.length ) {
 				console.log( resp.hits.total + " URLS already indexed." );
 
 				for ( var j = 0, y = resp.hits.hits.length; j < y; j++ ) {
-					var i = store_urls.indexOf( resp.hits.hits[ j ]._source.url );
-					if ( -1 < i ) {
-						store_urls.splice( i, 1 );
+					var index = store_urls.indexOf( resp.hits.hits[ j ]._source.url );
+					if ( -1 < index ) {
+						store_urls.splice( index, 1 );
 					}
 				}
 			} else {
@@ -154,13 +155,13 @@ var checkURLStore = function( response ) {
 			} else {
 				reject( "No URLs to store." );
 			}
-		}, function (err) {
-			console.trace(err.message);
+		}, function( err ) {
+			console.trace( err.message );
 			reject( "Error checking for URLs to store" );
 		} );
 	} );
 
-}
+};
 
 // A callback for Crawler
 var handleCrawl = function( error, res, done ) {
