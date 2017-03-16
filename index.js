@@ -220,8 +220,9 @@ var handleCrawl = function( error, result, done ) {
 };
 
 var c = new Crawler( {
-    maxConnections: 10,
-    callback: handleCrawl
+	maxConnections: 10,
+	timeout: 4000,
+	callback: handleCrawl
 } );
 
 // Queue just one URL, with default callback
