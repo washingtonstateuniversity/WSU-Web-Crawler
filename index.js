@@ -19,7 +19,7 @@ var store_urls = [];
 var stored_urls = [];
 
 // Number of URLs to scan before quitting. 0 indicates scan until done.
-var scan_limit = 15;
+var scan_limit = 0;
 
 var parse_href = new ParseHref( {
 
