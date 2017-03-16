@@ -53,7 +53,7 @@ var storeURLs = function( response ) {
 				resolve();
 			} else {
 				console.log( err );
-				reject( "Oops." );
+				reject( "Bulk URL storage not successful: " + err.message );
 			}
 		} );
 	} );
@@ -98,11 +98,10 @@ var handleCrawlResult = function( res ) {
 		} );
 
 		if ( 0 === store_urls.length ) {
-			console.log( "No URLs to store from this scan." );
-			reject( "Crawl next result." );
+			reject( "No URLs to store from this scan." );
 		} else {
 			console.log( store_urls.length + " URLs to store from this scan." );
-			resolve( "Anchors exist" );
+			resolve();
 		}
 	} );
 };
@@ -137,8 +136,6 @@ var checkURLStore = function() {
 			} else {
 				console.log( "0 URLs already indexed." );
 			}
-
-			console.log( store_urls.length + " URLs to store from this batch." );
 
 			var bulk_body = [];
 
@@ -189,8 +186,9 @@ var handleCrawl = function( error, res, done ) {
 			} else {
 				queueNext();
 			}
-		} ).catch( function() {
-			console.log( "Finished " + res.options.uri );
+		} ).catch( function( error ) {
+			console.log( error );
+			console.log( "Finished " + result.options.uri );
 			console.log( "Scanned URLs: " + scanned_urls.length );
 			console.log( "Total Stored: " + stored_urls.length );
 			console.log( "Remaining URLs to scan: " + scan_urls.length );
