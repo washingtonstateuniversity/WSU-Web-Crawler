@@ -63,6 +63,7 @@ var storeURLs = function( response ) {
 // Retrieves the next URL to be scanned and queues it for crawling.
 var scanNext = function() {
 	var next_url = scan_urls.shift();
+	console.log( "Scanning " + next_url );
 	c.queue( next_url );
 };
 
@@ -78,7 +79,6 @@ var handleCrawlResult = function( res ) {
 	var $ = res.$;
 
 	return new Promise( function( resolve, reject ) {
-		console.log( "Scanning " + res.options.uri );
 		scanned_urls.push( res.options.uri );
 
 		$( "a" ).each( function( index, value ) {
@@ -184,7 +184,6 @@ var isValidCrawlResult = function( result ) {
 // Outputs a common set of data after individual crawls and, if needed,
 // queues up the next request.
 var finishResult = function( result ) {
-	console.log( "Finished " + result.options.uri );
 	console.log( "Scanned URLs: " + scanned_urls.length );
 	console.log( "Total Stored: " + stored_urls.length );
 	console.log( "Remaining URLs to scan: " + scan_urls.length );
