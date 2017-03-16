@@ -131,6 +131,7 @@ var checkURLStore = function() {
 					var index = store_urls.indexOf( resp.hits.hits[ j ]._source.url );
 					if ( -1 < index ) {
 						store_urls.splice( index, 1 );
+						stored_urls.push( resp.hits.hits[ j ]._source.url );
 					}
 				}
 			} else {
