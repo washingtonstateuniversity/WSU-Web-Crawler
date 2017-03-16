@@ -38,6 +38,7 @@ var elastic = new es.Client( {
 	log: "error"
 } );
 
+// Stores a list of URLs in Elasticsearch with a bulk request.
 var storeURLs = function( response ) {
 	var bulk_body = response.body;
 	var urls = response.urls;
@@ -59,15 +60,20 @@ var storeURLs = function( response ) {
 	} );
 };
 
+// Retrieves the next URL to be scanned and queues it for crawling.
 var scanNext = function() {
 	var next_url = scan_urls.shift();
 	c.queue( next_url );
 };
 
+// Queues the next URL crawl to occur after a short pause to
+// avoid flooding servers with HTTP requests.
 var queueNext = function() {
 	setTimeout( scanNext, 1500 );
 };
 
+// Parse a crawl result for anchor elements and determine if individual href
+// attributes should be marked to scan or to store based on existing data.
 var handleCrawlResult = function( res ) {
 	var $ = res.$;
 
@@ -106,6 +112,8 @@ var handleCrawlResult = function( res ) {
 	} );
 };
 
+// Checks a list of URLs against those currently stored in Elasticsearch
+// so that storage of duplicate URLs is avoided.
 var checkURLStore = function() {
 	return new Promise( function( resolve, reject ) {
 		elastic.search( {
@@ -160,6 +168,8 @@ var checkURLStore = function() {
 
 };
 
+// Determines if a result is from a valid HTML crawl rather than
+// a static file or other non HTML like response.
 var isValidCrawlResult = function( result ) {
 	return new Promise( function( resolve, reject ) {
 		if ( "undefined" === typeof result.$ ) {
@@ -171,6 +181,8 @@ var isValidCrawlResult = function( result ) {
 	} );
 };
 
+// Outputs a common set of data after individual crawls and, if needed,
+// queues up the next request.
 var finishResult = function( result ) {
 	console.log( "Finished " + result.options.uri );
 	console.log( "Scanned URLs: " + scanned_urls.length );
