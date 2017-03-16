@@ -163,7 +163,7 @@ var isValidCrawlResult = function( result ) {
 	return new Promise( function( resolve, reject ) {
 		if ( "undefined" === typeof result.$ ) {
 			scanned_urls.push( result.options.uri );
-			reject( { "Skip scanning non HTML URL " + result.options.uri } );
+			reject( "Skip scanning non HTML URL " + result.options.uri );
 		} else {
 			resolve( result );
 		}
