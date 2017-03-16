@@ -99,7 +99,6 @@ var handleCrawlResult = function( res ) {
 
 		if ( 0 === store_urls.length ) {
 			console.log( "No URLs to store from this scan." );
-			queueNext();
 			reject( "Crawl next result." );
 		} else {
 			console.log( store_urls.length + " URLs to store from this scan." );
