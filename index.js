@@ -174,9 +174,9 @@ var isValidCrawlResult = function( result ) {
 // A callback for Crawler
 var handleCrawl = function( error, result, done ) {
 	if ( error ) {
-		console.log( "There was a crawler error." );
-		console.log( error );
-		return;
+		console.log( "Error scanning " + result.options.uri );
+		console.log( "Crawler error: " + error.message );
+		queueNext();
 	} else {
 
 		isValidCrawlResult( result ).then( handleCrawlResult )
