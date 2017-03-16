@@ -41,16 +41,20 @@ var storeURLs = function( response ) {
 	var bulk_body = response.body;
 	var urls = response.urls;
 
-	elastic.bulk( {
-		body: bulk_body
-	}, function( err, response ) {
-		if ( undefined !== typeof response ) {
-			store_urls = [];
-			stored_urls = stored_urls.concat( urls );
-			console.log( urls.length + " URLS stored in bulk to Elasticsearch." );
-		} else {
-			console.log( err );
-		}
+	return new Promise( function( resolve, reject ) {
+		elastic.bulk( {
+			body: bulk_body
+		}, function( err, response ) {
+			if ( undefined !== typeof response ) {
+				store_urls = [];
+				stored_urls = stored_urls.concat( urls );
+				console.log( urls.length + " URLS stored in bulk to Elasticsearch." );
+				resolve();
+			} else {
+				console.log( err );
+				reject( "Oops." );
+			}
+		} );
 	} );
 };
 
