@@ -168,7 +168,7 @@ var isValidCrawlResult = function( result ) {
 			resolve( result );
 		}
 	} );
-}
+};
 
 // A callback for Crawler
 var handleCrawl = function( error, result, done ) {
