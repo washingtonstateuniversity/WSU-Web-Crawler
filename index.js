@@ -147,34 +147,42 @@ var checkURLStore = function() {
 			}
 
 			if ( 0 !== bulk_body.length ) {
+				console.log( store_urls.length + " URLs to store from this batch." );
 				resolve( { body: bulk_body, urls: store_urls } );
 			} else {
 				reject( "No URLs to store." );
 			}
 		}, function( err ) {
-			console.trace( err.message );
-			reject( "Error checking for URLs to store" );
+			reject( "Error checking for URLs to store: " + err.message );
 		} );
 	} );
 
 };
 
+var isValidCrawlResult = function( result ) {
+	return new Promise( function( resolve, reject ) {
+		if ( "undefined" === typeof result.$ ) {
+			scanned_urls.push( result.options.uri );
+			reject( { "Skip scanning non HTML URL " + result.options.uri } );
+		} else {
+			resolve( result );
+		}
+	} );
+}
+
 // A callback for Crawler
-var handleCrawl = function( error, res, done ) {
+var handleCrawl = function( error, result, done ) {
 	if ( error ) {
 		console.log( "There was a crawler error." );
 		console.log( error );
 		return;
 	} else {
-		if ( "undefined" === typeof res.$ ) {
-			scanned_urls.push( res.options.uri );
-			console.log( "Skip scanning non HTML URL " + res.options.uri );
-			queueNext();
-			return;
-		}
 
-		handleCrawlResult( res ).then( checkURLStore ).then( storeURLs ).then( function() {
-			console.log( "Finished " + res.options.uri );
+		isValidCrawlResult( result ).then( handleCrawlResult )
+									.then( checkURLStore )
+									.then( storeURLs )
+									.then( function() {
+			console.log( "Finished " + result.options.uri );
 			console.log( "Scanned URLs: " + scanned_urls.length );
 			console.log( "Total Stored: " + stored_urls.length );
 			console.log( "Remaining URLs to scan: " + scan_urls.length );
