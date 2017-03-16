@@ -201,9 +201,8 @@ var finishResult = function( result ) {
 // A callback for Crawler
 var handleCrawl = function( error, result, done ) {
 	if ( error ) {
-		console.log( "Error scanning " + result.options.uri );
-		console.log( "Crawler error: " + error.message );
-		queueNext();
+		console.log( "ERROR: " + error.message );
+		finishResult( result );
 	} else {
 
 		isValidCrawlResult( result )
