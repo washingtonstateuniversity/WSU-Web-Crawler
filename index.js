@@ -171,6 +171,21 @@ var isValidCrawlResult = function( result ) {
 	} );
 };
 
+var finishResult = function( result ) {
+	console.log( "Finished " + result.options.uri );
+	console.log( "Scanned URLs: " + scanned_urls.length );
+	console.log( "Total Stored: " + stored_urls.length );
+	console.log( "Remaining URLs to scan: " + scan_urls.length );
+	console.log( "" );
+
+	// Stop scanning when no URLs are left to scan or when the limit has been reached.
+	if ( 0 === scan_urls.length || ( 0 !== scan_limit && scan_limit < scanned_urls.length ) ) {
+		return;
+	} else {
+		queueNext();
+	}
+};
+
 // A callback for Crawler
 var handleCrawl = function( error, result, done ) {
 	if ( error ) {
@@ -183,33 +198,10 @@ var handleCrawl = function( error, result, done ) {
 			.then( handleCrawlResult )
 			.then( checkURLStore )
 			.then( storeURLs )
-			.then( function() {
-				console.log( "Finished " + result.options.uri );
-				console.log( "Scanned URLs: " + scanned_urls.length );
-				console.log( "Total Stored: " + stored_urls.length );
-				console.log( "Remaining URLs to scan: " + scan_urls.length );
-				console.log( "" );
-
-				// Stop scanning when no URLs are left to scan or when the limit has been reached.
-				if ( 0 === scan_urls.length || ( 0 !== scan_limit && scan_limit < scanned_urls.length ) ) {
-					return;
-				} else {
-					queueNext();
-				}
-			} ).catch( function( error ) {
+			.then( function() { finishResult( result );	} )
+			.catch( function( error ) {
 				console.log( error );
-				console.log( "Finished " + result.options.uri );
-				console.log( "Scanned URLs: " + scanned_urls.length );
-				console.log( "Total Stored: " + stored_urls.length );
-				console.log( "Remaining URLs to scan: " + scan_urls.length );
-				console.log( "" );
-
-				// Stop scanning when no URLs are left to scan or when the limit has been reached.
-				if ( 0 === scan_urls.length || ( 0 !== scan_limit && scan_limit < scanned_urls.length ) ) {
-					return;
-				} else {
-					queueNext();
-				}
+				finishResult( result );
 			} );
 	}
 	done();
