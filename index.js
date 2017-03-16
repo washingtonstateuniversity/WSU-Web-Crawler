@@ -37,14 +37,17 @@ var elastic = new es.Client( {
 	log: "error"
 } );
 
-var storeURLs = function( bulk_body, urls ) {
+var storeURLs = function( response ) {
+	var bulk_body = response.body;
+	var urls = response.urls;
+
 	elastic.bulk( {
 		body: bulk_body
 	}, function( err, response ) {
 		if ( undefined !== typeof response ) {
 			store_urls = [];
 			stored_urls = stored_urls.concat( urls );
-			console.log( "Stored list of bulk URLs to ES" );
+			console.log( urls.length + " URLS stored in bulk to Elasticsearch." );
 		} else {
 			console.log( err );
 		}
@@ -60,98 +63,121 @@ var queueNext = function() {
 	setTimeout( scanNext, 1500 );
 }
 
-var c = new Crawler( {
-    maxConnections: 10,
-    callback: function( error, res, done ) {
-        if ( error ) {
-            console.log( error );
-			return;
-        } else {
-			if ( "undefined" === typeof res.$ ) {
-				scanned_urls.push( res.options.uri );
-				console.log( "Skip scanning non HTML URL " + res.options.uri );
-				queueNext();
-				return;
-			}
+var handleCrawlResult = function( res ) {
+	var $ = res.$;
 
-            var $ = res.$;
+	return new Promise( function( resolve, reject ) {
+		console.log( "Scanning " + res.options.uri );
+		scanned_urls.push( res.options.uri );
 
-			console.log( "Scanning " + res.options.uri );
-			scanned_urls.push( res.options.uri );
+		$( "a" ).each( function( index, value ) {
+			if ( undefined !== value.attribs.href && "#" !== value.attribs.href ) {
+				var url = parse_href.get_url( value.attribs.href, res.options.uri );
 
-			$( "a" ).each( function( index, value ) {
-				if ( undefined !== value.attribs.href && "#" !== value.attribs.href ) {
-					var url = parse_href.get_url( value.attribs.href, res.options.uri );
-
-					if ( false === url ) {
-						return;
-					}
-
-					// If a URL has not been scanned and is not slated to be scanned,
-					// mark it to be scanned.
-					if ( -1 >= scanned_urls.indexOf( url ) && -1 >= scan_urls.indexOf( url ) ) {
-						scan_urls.push( url );
-					}
-
-					// If a URL has not been stored and is not slated to be stored,
-					// mark it to be stored.
-					if ( -1 >= stored_urls.indexOf( url ) && -1 >= store_urls.indexOf( url ) ) {
-						store_urls.push( url );
-					}
+				if ( false === url ) {
+					return;
 				}
-			} );
 
-			if ( 0 === store_urls.length ) {
-				console.log( "No ES lookup needed, no URLs to store." );
-				queueNext();
-				return;
+				// If a URL has not been scanned and is not slated to be scanned,
+				// mark it to be scanned.
+				if ( -1 >= scanned_urls.indexOf( url ) && -1 >= scan_urls.indexOf( url ) ) {
+					scan_urls.push( url );
+				}
+
+				// If a URL has not been stored and is not slated to be stored,
+				// mark it to be stored.
+				if ( -1 >= stored_urls.indexOf( url ) && -1 >= store_urls.indexOf( url ) ) {
+					store_urls.push( url );
+				}
 			}
+		} );
 
-			elastic.search( {
-				index: process.env.ES_URL_INDEX,
-				type: 'url',
-				body: {
-					query: {
-						bool: {
-							filter: {
-								terms: {
-									url: store_urls
-								}
+		if ( 0 === store_urls.length ) {
+			console.log( "No URLs to store from this scan." );
+			queueNext();
+			reject( "Crawl next result." );
+		} else {
+			console.log( store_urls.length + " URLs to store from this scan." );
+			resolve( "Anchors exist" );
+		}
+	} );
+};
+
+var checkURLStore = function( response ) {
+	return new Promise( function( resolve, reject ) {
+		elastic.search( {
+			index: process.env.ES_URL_INDEX,
+			type: 'url',
+			body: {
+				size: 300,
+				query: {
+					bool: {
+						filter: {
+							terms: {
+								url: store_urls
 							}
 						}
 					}
 				}
-			} ).then( function ( resp ) {
-				if ( 0 !== resp.hits.hits.length ) {
-					console.log( resp.hits.total + " total URLS indexed from list of " + store_urls.length + " URLs" );
+			}
+		} ).then( function ( resp ) {
+			if ( 0 !== resp.hits.hits.length ) {
+				console.log( resp.hits.total + " URLS already indexed." );
 
-					for ( var j = 0, y = resp.hits.hits; j < y; j++ ) {
-						console.log( resp.hit.hits[ j ] );
+				for ( var j = 0, y = resp.hits.hits.length; j < y; j++ ) {
+					var i = store_urls.indexOf( resp.hits.hits[ j ]._source.url );
+					if ( -1 < i ) {
+						store_urls.splice( i, 1 );
 					}
-					// Remove the stored URLs from the to be stored list.
-				} else {
-					console.log( "No URLs in this batch are currenlty stored." );
 				}
+			} else {
+				console.log( "0 URLs already indexed." );
+			}
 
-				var bulk_body = [];
+			console.log( store_urls.length + " URLs to store from this batch." );
 
-				for ( var i = 0, x = store_urls.length; i < x; i++ ) {
-					var url = parse_url.parse( store_urls[ i ] );
+			var bulk_body = [];
 
-					bulk_body.push( { index: { _index: process.env.ES_URL_INDEX, _type: "url" } } );
-					bulk_body.push( { url: store_urls[ i ], domain: url.hostname } );
-				}
+			for ( var i = 0, x = store_urls.length; i < x; i++ ) {
+				var url = parse_url.parse( store_urls[ i ] );
 
-				if ( 0 !== bulk_body.length ) {
-					storeURLs( bulk_body, store_urls );
-				}
-			}, function (err) {
-				console.trace(err.message);
-			} );
+				bulk_body.push( { index: { _index: process.env.ES_URL_INDEX, _type: "url" } } );
+				bulk_body.push( { url: store_urls[ i ], domain: url.hostname } );
+			}
 
+			if ( 0 !== bulk_body.length ) {
+				resolve( { body: bulk_body, urls: store_urls } );
+			} else {
+				reject( "No URLs to store." );
+			}
+		}, function (err) {
+			console.trace(err.message);
+			reject( "Error checking for URLs to store" );
+		} );
+	} );
+
+}
+
+// A callback for Crawler
+var handleCrawl = function( error, res, done ) {
+	if ( error ) {
+		console.log( "There was a crawler error." );
+		console.log( error );
+		return;
+	} else {
+		if ( "undefined" === typeof res.$ ) {
+			scanned_urls.push( res.options.uri );
+			console.log( "Skip scanning non HTML URL " + res.options.uri );
+			queueNext();
+			return;
+		}
+
+		handleCrawlResult( res ).then( checkURLStore ).then( storeURLs ).then( function() {
 			console.log( "Finished " + res.options.uri );
 			console.log( "Scanned URLs: " + scanned_urls.length );
+			console.log( "Total Stored: " + stored_urls.length );
 			console.log( "Remaining URLs to scan: " + scan_urls.length );
+			console.log( "" );
 
 			// Stop scanning when no URLs are left to scan or when the limit has been reached.
 			if ( 0 === scan_urls.length || ( 0 !== scan_limit && scan_limit < scanned_urls.length ) ) {
@@ -159,9 +185,27 @@ var c = new Crawler( {
 			} else {
 				queueNext();
 			}
-        }
-        done();
-    }
+		} ).catch( function() {
+			console.log( "Finished " + res.options.uri );
+			console.log( "Scanned URLs: " + scanned_urls.length );
+			console.log( "Total Stored: " + stored_urls.length );
+			console.log( "Remaining URLs to scan: " + scan_urls.length );
+			console.log( "" );
+
+			// Stop scanning when no URLs are left to scan or when the limit has been reached.
+			if ( 0 === scan_urls.length || ( 0 !== scan_limit && scan_limit < scanned_urls.length ) ) {
+				return;
+			} else {
+				queueNext();
+			}
+		} );
+	}
+	done();
+};
+
+var c = new Crawler( {
+    maxConnections: 10,
+    callback: handleCrawl
 } );
 
 // Queue just one URL, with default callback
