@@ -183,7 +183,7 @@ var isValidCrawlResult = function( result ) {
 
 // Outputs a common set of data after individual crawls and, if needed,
 // queues up the next request.
-var finishResult = function( result ) {
+var finishResult = function() {
 	console.log( "Scanned URLs: " + scanned_urls.length );
 	console.log( "Total Stored: " + stored_urls.length );
 	console.log( "Remaining URLs to scan: " + scan_urls.length );
@@ -203,15 +203,14 @@ var handleCrawl = function( error, result, done ) {
 		console.log( "ERROR: " + error.message );
 		finishResult( result );
 	} else {
-
 		isValidCrawlResult( result )
 			.then( handleCrawlResult )
 			.then( checkURLStore )
 			.then( storeURLs )
-			.then( function() { finishResult( result );	} )
+			.then( function() { finishResult();	} )
 			.catch( function( error ) {
 				console.log( error );
-				finishResult( result );
+				finishResult();
 			} );
 	}
 	done();
