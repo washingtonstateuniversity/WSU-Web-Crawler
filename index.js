@@ -27,7 +27,7 @@ var parse_href = new ParseHref( {
 	allowed_domains: [ "wsu.edu" ],
 
 	// These subdomains are flagged to not be scanned.
-	flagged_domains: [ "parking.wsu.edu", "www.parking.wsu.edu" ],
+	flagged_domains: [ "parking.wsu.edu", "www.parking.wsu.edu", "schedule.wsu.edu" ],
 
 	// These file extensions are flagged to not be scanned.
 	flagged_extensions: [ "pdf", "jpg", "jpeg", "gif", "xls", "doc", "png" ]
