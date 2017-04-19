@@ -1,5 +1,4 @@
 var Crawler = require( "crawler" );
-var Promise = require( "promise" );
 var parse_url = require( "url" );
 var ParseHref = require( "./lib/parse-href" );
 var es = require( "elasticsearch" );
@@ -7,7 +6,7 @@ var es = require( "elasticsearch" );
 require( "dotenv" ).config();
 
 // Tracks the list of URLs to be scanned.
-var scan_urls = [ "https://wsu.edu/" ];
+var scan_urls = process.env.START_URLS.split( "," );
 
 // Tracks the list of URLs scanned.
 var scanned_urls = [];
@@ -24,13 +23,13 @@ var scan_limit = 0;
 var parse_href = new ParseHref( {
 
 	// These top level domains are allowed to be scanned by the crawler.
-	allowed_domains: [ "wsu.edu" ],
+	allowed_domains: process.env.ROOT_DOMAINS.split( "," ),
 
 	// These subdomains are flagged to not be scanned.
-	flagged_domains: [ "parking.wsu.edu", "www.parking.wsu.edu" ],
+	flagged_domains: process.env.SKIP_DOMAINS.split( "," ),
 
 	// These file extensions are flagged to not be scanned.
-	flagged_extensions: [ "pdf", "jpg", "jpeg", "gif", "xls", "doc", "png" ]
+	flagged_extensions: [ "pdf", "jpg", "jpeg", "gif", "xls", "doc", "docx", "png" ]
 } );
 
 var elastic = new es.Client( {

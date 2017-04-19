@@ -19,7 +19,7 @@
   "dependencies": {
     "crawler": "^1.0.3",
     "dotenv": "^4.0.0",
-    "elasticsearch": "^12.1.3",
+    "elasticsearch": "^13.0.0-rc2",
     "url": "^0.11.0"
   },
   "devDependencies": {
