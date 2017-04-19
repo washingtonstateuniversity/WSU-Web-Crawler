@@ -18,6 +18,9 @@ Environment data is stored in a `.env` file that is not part of this repository.
 ```
 ES_HOST="https://myelastic.domain"
 ES_URL_INDEX="url-storage-index"
+ROOT_DOMAINS="root.domain"
+SKIP_DOMAINS="problem1.root.domain,problem2.root.domain"
+START_URLS="https://root.domain"
 ```
 
 ## Schema
