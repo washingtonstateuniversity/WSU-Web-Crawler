@@ -1,5 +1,4 @@
 var Crawler = require( "crawler" );
-var Promise = require( "promise" );
 var parse_url = require( "url" );
 var ParseHref = require( "./lib/parse-href" );
 var es = require( "elasticsearch" );
