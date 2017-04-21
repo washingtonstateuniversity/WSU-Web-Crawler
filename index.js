@@ -318,7 +318,9 @@ var c = new Crawler( {
 	maxConnections: 10,
 	maxRedirects: 0,
 	followRedirect: false,
+	retryTimeout: 4000,
 	timeout: 4000,
+	userAgent: "WSU Web Crawler: web.wsu.edu/crawler/",
 	callback: handleCrawl
 } );
 
