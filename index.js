@@ -2,6 +2,7 @@ var Crawler = require( "crawler" );
 var parse_url = require( "url" );
 var ParseHref = require( "./lib/parse-href" );
 var es = require( "elasticsearch" );
+var util = require( "util" );
 
 require( "dotenv" ).config();
 
@@ -16,9 +17,6 @@ var store_urls = [];
 
 // Tracks the list of URLs stored.
 var stored_urls = [];
-
-// Number of URLs to scan before quitting. 0 indicates scan until done.
-var scan_limit = 0;
 
 var parse_href = new ParseHref( {
 
@@ -49,10 +47,10 @@ var storeURLs = function( response ) {
 			if ( undefined !== typeof response ) {
 				store_urls = [];
 				stored_urls = stored_urls.concat( urls );
-				console.log( urls.length + " URLS stored in bulk to Elasticsearch." );
+				util.log( urls.length + " URLS stored in bulk to Elasticsearch." );
 				resolve();
 			} else {
-				console.log( err );
+				util.log( "Error storing bulk URLs: " + err.message );
 				reject( "Bulk URL storage not successful: " + err.message );
 			}
 		} );
@@ -62,7 +60,7 @@ var storeURLs = function( response ) {
 // Retrieves the next URL to be scanned and queues it for crawling.
 var scanNext = function() {
 	var next_url = scan_urls.shift();
-	console.log( "Scanning " + next_url );
+	util.log( "Scanning " + next_url );
 	c.queue( next_url );
 };
 
@@ -72,40 +70,162 @@ var queueNext = function() {
 	setTimeout( scanNext, 1500 );
 };
 
+/**
+ * Updates a URLs record with the results of a URL scan.
+ *
+ * @param url {string}
+ * @param data {object}
+ */
+var updateURLData = function( url, data ) {
+	var d = new Date();
+
+	elastic.search( {
+		index: process.env.ES_URL_INDEX,
+		type: "url",
+		body: {
+			size: 1,
+			query: {
+				bool: {
+					must: {
+						term: {
+							url: url
+						}
+					}
+				}
+			}
+		}
+	} ).then( function( response ) {
+		if ( 0 === response.hits.hits.length ) {
+			util.log( "No record found for " + url + " to update?" );
+		} else {
+			elastic.update( {
+				index: process.env.ES_URL_INDEX,
+				type: "url",
+				id: response.hits.hits[ 0 ]._id,
+				body: {
+					doc: {
+						identity: data.identity_version,
+						analytics: data.global_analytics,
+						status_code: data.status_code,
+						redirect_url: data.redirect_url,
+						last_scan: d.getTime(),
+						anchors: data.anchors
+					}
+				}
+			} ).then( function() {
+				util.log( "URL updated: " + url );
+			}, function( error ) {
+				util.log( "Error updating URL: " + error.message );
+			} );
+		}
+	} );
+};
+
 // Parse a crawl result for anchor elements and determine if individual href
 // attributes should be marked to scan or to store based on existing data.
 var handleCrawlResult = function( res ) {
-	var $ = res.$;
-
 	return new Promise( function( resolve, reject ) {
+		var reject_message = "";
+
+		var url_update = {
+			identity_version: "unknown",
+			global_analytics: "unknown",
+			status_code: res.statusCode,
+			redirect_url: "",
+			anchors: []
+		};
+
 		scanned_urls.push( res.options.uri );
 
-		$( "a" ).each( function( index, value ) {
-			if ( undefined !== value.attribs.href && "#" !== value.attribs.href ) {
-				var url = parse_href.get_url( value.attribs.href, res.options.uri );
+		// Watch for URLs that do not respond as a 200 OK.
+		if ( 200 !== res.statusCode ) {
 
-				if ( false === url ) {
-					return;
-				}
+			// If a 301 or 302, a location for the new URL will be available.
+			if ( "undefined" !== typeof res.headers.location ) {
+				var url = parse_href.get_url( res.headers.location, res.options.uri );
 
-				// If a URL has not been scanned and is not slated to be scanned,
-				// mark it to be scanned.
-				if ( -1 >= scanned_urls.indexOf( url ) && -1 >= scan_urls.indexOf( url ) ) {
+				// Mark un-scanned URLS to be scanned.
+				if ( url && -1 >= scanned_urls.indexOf( url ) && -1 >= scan_urls.indexOf( url ) ) {
 					scan_urls.push( url );
 				}
 
-				// If a URL has not been stored and is not slated to be stored,
-				// mark it to be stored.
-				if ( -1 >= stored_urls.indexOf( url ) && -1 >= store_urls.indexOf( url ) ) {
+				// Mark un-stored URLs to be stored.
+				if ( url && -1 >= stored_urls.indexOf( url ) && -1 >= store_urls.indexOf( url ) ) {
 					store_urls.push( url );
 				}
+
+				url_update.redirect_url = url;
+			} else {
+
+				// This is likely a 404, 403, 500, or other error code.
+				reject_message = "Error in handleCrawlResult: " + res.statusCode + " response code";
 			}
-		} );
+		} else if ( /http-equiv="refresh"/i.test( res.body ) ) {
+
+			// PhantomJS has problems processing pages that auto redirect.
+			reject_message = "Error in handleCrawlResult: page body contains http-equiv refresh";
+		} else if ( "undefined" === typeof res.$ ) {
+			reject_message = "Error in handleCrawlResult: Non HTML URL " + res.options.uri;
+		} else {
+			var $ = res.$;
+
+			// Attempt to determine what identity a site is using.
+			if ( /spine.min.js/i.test( res.body ) ) {
+				url_update.identity_version = "spine";
+			} else if ( /spine.js/i.test( res.body ) ) {
+				url_update.identity_version = "spine";
+			} else if ( /identifierv2.js/i.test( res.body ) ) {
+				url_update.identity_version = "identifierv2";
+			} else {
+				url_update.identity_version = "other";
+			}
+
+			// Check if global analytics are likely in use.
+			if ( /wsu_analytics/i.test( res.body ) ) {
+				url_update.global_analytics = "enabled";
+			}
+
+			// Check if enhanced global analytics via GTM are in use.
+			if ( /GTM-K5CHVG/i.test( res.body ) ) {
+				url_update.global_analytics = "tag_manager";
+			}
+
+			$( "a" ).each( function( index, value ) {
+				if ( undefined !== value.attribs.href && "#" !== value.attribs.href ) {
+					var url = parse_href.get_url( value.attribs.href, res.options.uri );
+
+					if ( false === url ) {
+						return;
+					}
+
+					// If a URL has not been scanned and is not slated to be scanned,
+					// mark it to be scanned.
+					if ( -1 >= scanned_urls.indexOf( url ) && -1 >= scan_urls.indexOf( url ) ) {
+						scan_urls.push( url );
+					}
+
+					// If a URL has not been stored and is not slated to be stored,
+					// mark it to be stored.
+					if ( -1 >= stored_urls.indexOf( url ) && -1 >= store_urls.indexOf( url ) ) {
+						store_urls.push( url );
+					}
+
+					// Capture a list of unique anchors found at this URL.
+					if ( -1 >= url_update.anchors.indexOf( url ) ) {
+						url_update.anchors.push( url );
+					}
+				}
+			} );
+		}
+
+		// Update the URL's record with the results of this scan.
+		updateURLData( res.options.uri, url_update );
 
 		if ( 0 === store_urls.length ) {
-			reject( "No URLs to store from this scan." );
+			reject( "Result: No new unique URLs." );
+		} else if ( "" !== reject_message ) {
+			reject( reject_message );
 		} else {
-			console.log( store_urls.length + " URLs to store from this scan." );
 			resolve();
 		}
 	} );
@@ -131,8 +251,11 @@ var checkURLStore = function() {
 				}
 			}
 		} ).then( function( resp ) {
+			var found_urls = store_urls.length;
+			var indexed_urls = 0;
+
 			if ( 0 !== resp.hits.hits.length ) {
-				console.log( resp.hits.total + " URLS already indexed." );
+				indexed_urls = resp.hits.total;
 
 				for ( var j = 0, y = resp.hits.hits.length; j < y; j++ ) {
 					var index = store_urls.indexOf( resp.hits.hits[ j ]._source.url );
@@ -141,8 +264,6 @@ var checkURLStore = function() {
 						stored_urls.push( resp.hits.hits[ j ]._source.url );
 					}
 				}
-			} else {
-				console.log( "0 URLs already indexed." );
 			}
 
 			var bulk_body = [];
@@ -155,43 +276,25 @@ var checkURLStore = function() {
 			}
 
 			if ( 0 !== bulk_body.length ) {
-				console.log( store_urls.length + " URLs to store from this batch." );
+				util.log( "Result: " + found_urls + " found, " + indexed_urls + " exist, " + store_urls.length + " new" );
 				resolve( { body: bulk_body, urls: store_urls } );
 			} else {
-				reject( "No URLs to store." );
+				reject( "Result: " + found_urls + " found, " + indexed_urls + " exist, 0 new" );
 			}
 		}, function( err ) {
-			reject( "Error checking for URLs to store: " + err.message );
+			reject( "Error in checkURLStore:: " + err.message );
 		} );
 	} );
 
 };
 
-// Determines if a result is from a valid HTML crawl rather than
-// a static file or other non HTML like response.
-var isValidCrawlResult = function( result ) {
-	return new Promise( function( resolve, reject ) {
-		if ( "undefined" === typeof result.$ ) {
-			scanned_urls.push( result.options.uri );
-			reject( "Skip scanning non HTML URL " + result.options.uri );
-		} else {
-			resolve( result );
-		}
-	} );
-};
-
 // Outputs a common set of data after individual crawls and, if needed,
 // queues up the next request.
 var finishResult = function() {
-	console.log( "Scanned URLs: " + scanned_urls.length );
-	console.log( "Total Stored: " + stored_urls.length );
-	console.log( "Remaining URLs to scan: " + scan_urls.length );
-	console.log( "" );
+	util.log( "Status: " + scanned_urls.length + " scanned, " + stored_urls.length + " stored, " + scan_urls.length + " to scan" );
 
-	// Stop scanning when no URLs are left to scan or when the limit has been reached.
-	if ( 0 === scan_urls.length || ( 0 !== scan_limit && scan_limit < scanned_urls.length ) ) {
-		return;
-	} else {
+	// Continue scanning until no URLs are left.
+	if ( 0 !== scan_urls.length  ) {
 		queueNext();
 	}
 };
@@ -199,16 +302,15 @@ var finishResult = function() {
 // A callback for Crawler
 var handleCrawl = function( error, result, done ) {
 	if ( error ) {
-		console.log( "ERROR: " + error.message );
+		util.log( "ERROR: " + error.message );
 		finishResult( result );
 	} else {
-		isValidCrawlResult( result )
-			.then( handleCrawlResult )
+		handleCrawlResult( result )
 			.then( checkURLStore )
 			.then( storeURLs )
 			.then( function() { finishResult();	} )
 			.catch( function( error ) {
-				console.log( error );
+				util.log( error );
 				finishResult();
 			} );
 	}
@@ -217,8 +319,12 @@ var handleCrawl = function( error, result, done ) {
 
 var c = new Crawler( {
 	maxConnections: 10,
-	maxRedirects: 6,
+	maxRedirects: 0,
+	followRedirect: false,
+	retries: 1,
+	retryTimeout: 4000,
 	timeout: 4000,
+	userAgent: "WSU Web Crawler: web.wsu.edu/crawler/",
 	callback: handleCrawl
 } );
 
