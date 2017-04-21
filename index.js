@@ -318,6 +318,7 @@ var c = new Crawler( {
 	maxConnections: 10,
 	maxRedirects: 0,
 	followRedirect: false,
+	retries: 1,
 	retryTimeout: 4000,
 	timeout: 4000,
 	userAgent: "WSU Web Crawler: web.wsu.edu/crawler/",
