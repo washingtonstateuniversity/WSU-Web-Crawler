@@ -131,7 +131,7 @@ var handleCrawlResult = function( res ) {
 			identity_version: "unknown",
 			global_analytics: "unknown",
 			status_code: res.statusCode,
-			redirect_url: '',
+			redirect_url: "",
 			anchors: []
 		};
 
@@ -139,8 +139,9 @@ var handleCrawlResult = function( res ) {
 
 		// Watch for URLs that do not respond as a 200 OK.
 		if ( 200 !== res.statusCode ) {
+
 			// If a 301 or 302, a location for the new URL will be available.
-			if ( 'undefined' !== typeof res.headers.location ) {
+			if ( "undefined" !== typeof res.headers.location ) {
 				var url = parse_href.get_url( res.headers.location, res.options.uri );
 
 				// Mark un-scanned URLS to be scanned.
@@ -155,10 +156,12 @@ var handleCrawlResult = function( res ) {
 
 				url_update.redirect_url = url;
 			} else {
+
 				// This is likely a 404, 403, 500, or other error code.
 				reject_message = "Error in handleCrawlResult: " + res.statusCode + " response code";
 			}
 		} else if ( /http-equiv="refresh"/i.test( res.body ) ) {
+
 			// PhantomJS has problems processing pages that auto redirect.
 			reject_message = "Error in handleCrawlResult: page body contains http-equiv refresh";
 		} else if ( "undefined" === typeof res.$ ) {
@@ -168,23 +171,23 @@ var handleCrawlResult = function( res ) {
 
 			// Attempt to determine what identity a site is using.
 			if ( /spine.min.js/i.test( res.body ) ) {
-				url_update.identity_version = 'spine';
+				url_update.identity_version = "spine";
 			} else if ( /spine.js/i.test( res.body ) ) {
-				url_update.identity_version = 'spine';
+				url_update.identity_version = "spine";
 			} else if ( /identifierv2.js/i.test( res.body ) ) {
-				url_update.identity_version = 'identifierv2';
+				url_update.identity_version = "identifierv2";
 			} else {
-				url_update.identity_version = 'other';
+				url_update.identity_version = "other";
 			}
 
 			// Check if global analytics are likely in use.
 			if ( /wsu_analytics/i.test( res.body ) ) {
-				url_update.global_analytics = 'enabled';
+				url_update.global_analytics = "enabled";
 			}
 
 			// Check if enhanced global analytics via GTM are in use.
 			if ( /GTM-K5CHVG/i.test( res.body ) ) {
-				url_update.global_analytics = 'tag_manager';
+				url_update.global_analytics = "tag_manager";
 			}
 
 			$( "a" ).each( function( index, value ) {

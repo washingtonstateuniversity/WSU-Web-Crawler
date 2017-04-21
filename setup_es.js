@@ -30,7 +30,7 @@ var createIndex = function() {
 							type: "keyword"
 						},
 						status_code: {
-							type: integer
+							type: "integer"
 						},
 						redirect_url: {
 							type: "keyword"
