@@ -18,9 +18,6 @@ var store_urls = [];
 // Tracks the list of URLs stored.
 var stored_urls = [];
 
-// Number of URLs to scan before quitting. 0 indicates scan until done.
-var scan_limit = 0;
-
 var parse_href = new ParseHref( {
 
 	// These top level domains are allowed to be scanned by the crawler.
@@ -186,10 +183,8 @@ var isValidCrawlResult = function( result ) {
 var finishResult = function() {
 	util.log( "Status: " + scanned_urls.length + " scanned, " + stored_urls.length + " stored, " + scan_urls.length + " to scan" );
 
-	// Stop scanning when no URLs are left to scan or when the limit has been reached.
-	if ( 0 === scan_urls.length || ( 0 !== scan_limit && scan_limit < scanned_urls.length ) ) {
-		return;
-	} else {
+	// Continue scanning until no URLs are left.
+	if ( 0 !== scan_urls.length  ) {
 		queueNext();
 	}
 };
