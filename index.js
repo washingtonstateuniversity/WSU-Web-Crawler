@@ -2,6 +2,7 @@ var Crawler = require( "crawler" );
 var parse_url = require( "url" );
 var ParseHref = require( "./lib/parse-href" );
 var es = require( "elasticsearch" );
+var util = require( "util" );
 
 require( "dotenv" ).config();
 
@@ -49,10 +50,10 @@ var storeURLs = function( response ) {
 			if ( undefined !== typeof response ) {
 				store_urls = [];
 				stored_urls = stored_urls.concat( urls );
-				console.log( urls.length + " URLS stored in bulk to Elasticsearch." );
+				util.log( urls.length + " URLS stored in bulk to Elasticsearch." );
 				resolve();
 			} else {
-				console.log( err );
+				util.log( "Error storing bulk URLs: " + err.message );
 				reject( "Bulk URL storage not successful: " + err.message );
 			}
 		} );
@@ -62,7 +63,7 @@ var storeURLs = function( response ) {
 // Retrieves the next URL to be scanned and queues it for crawling.
 var scanNext = function() {
 	var next_url = scan_urls.shift();
-	console.log( "Scanning " + next_url );
+	util.log( "Scanning " + next_url );
 	c.queue( next_url );
 };
 
@@ -105,7 +106,7 @@ var handleCrawlResult = function( res ) {
 		if ( 0 === store_urls.length ) {
 			reject( "No URLs to store from this scan." );
 		} else {
-			console.log( store_urls.length + " URLs to store from this scan." );
+			util.log( store_urls.length + " URLs to store from this scan." );
 			resolve();
 		}
 	} );
@@ -132,7 +133,7 @@ var checkURLStore = function() {
 			}
 		} ).then( function( resp ) {
 			if ( 0 !== resp.hits.hits.length ) {
-				console.log( resp.hits.total + " URLS already indexed." );
+				util.log( resp.hits.total + " URLS already indexed." );
 
 				for ( var j = 0, y = resp.hits.hits.length; j < y; j++ ) {
 					var index = store_urls.indexOf( resp.hits.hits[ j ]._source.url );
@@ -142,7 +143,7 @@ var checkURLStore = function() {
 					}
 				}
 			} else {
-				console.log( "0 URLs already indexed." );
+				util.log( "0 URLs already indexed." );
 			}
 
 			var bulk_body = [];
@@ -155,7 +156,7 @@ var checkURLStore = function() {
 			}
 
 			if ( 0 !== bulk_body.length ) {
-				console.log( store_urls.length + " URLs to store from this batch." );
+				util.log( store_urls.length + " URLs to store from this batch." );
 				resolve( { body: bulk_body, urls: store_urls } );
 			} else {
 				reject( "No URLs to store." );
@@ -199,7 +200,7 @@ var finishResult = function() {
 // A callback for Crawler
 var handleCrawl = function( error, result, done ) {
 	if ( error ) {
-		console.log( "ERROR: " + error.message );
+		util.log( "ERROR: " + error.message );
 		finishResult( result );
 	} else {
 		isValidCrawlResult( result )
@@ -208,7 +209,7 @@ var handleCrawl = function( error, result, done ) {
 			.then( storeURLs )
 			.then( function() { finishResult();	} )
 			.catch( function( error ) {
-				console.log( error );
+				util.log( error );
 				finishResult();
 			} );
 	}
