@@ -104,9 +104,8 @@ var handleCrawlResult = function( res ) {
 		} );
 
 		if ( 0 === store_urls.length ) {
-			reject( "No URLs to store from this scan." );
+			reject( "Result: No new unique URLs." );
 		} else {
-			util.log( store_urls.length + " URLs to store from this scan." );
 			resolve();
 		}
 	} );
@@ -132,8 +131,11 @@ var checkURLStore = function() {
 				}
 			}
 		} ).then( function( resp ) {
+			var found_urls = store_urls.length;
+			var indexed_urls = 0;
+
 			if ( 0 !== resp.hits.hits.length ) {
-				util.log( resp.hits.total + " URLS already indexed." );
+				indexed_urls = resp.hits.total;
 
 				for ( var j = 0, y = resp.hits.hits.length; j < y; j++ ) {
 					var index = store_urls.indexOf( resp.hits.hits[ j ]._source.url );
@@ -142,8 +144,6 @@ var checkURLStore = function() {
 						stored_urls.push( resp.hits.hits[ j ]._source.url );
 					}
 				}
-			} else {
-				util.log( "0 URLs already indexed." );
 			}
 
 			var bulk_body = [];
@@ -156,13 +156,13 @@ var checkURLStore = function() {
 			}
 
 			if ( 0 !== bulk_body.length ) {
-				util.log( store_urls.length + " URLs to store from this batch." );
+				util.log( "Result: " + found_urls + " found, " + indexed_urls + " exist, " + store_urls.length + " new" );
 				resolve( { body: bulk_body, urls: store_urls } );
 			} else {
-				reject( "No URLs to store." );
+				reject( "Result: " + found_urls + " found, " + indexed_urls + " exist, 0 new" );
 			}
 		}, function( err ) {
-			reject( "Error checking for URLs to store: " + err.message );
+			reject( "Error in checkURLStore:: " + err.message );
 		} );
 	} );
 
@@ -184,7 +184,7 @@ var isValidCrawlResult = function( result ) {
 // Outputs a common set of data after individual crawls and, if needed,
 // queues up the next request.
 var finishResult = function() {
-	util.log( "Status: " + scanned_urls.length + " scanned, " + stored_urls.length + " stored, " + scan_urls.length + " remain" );
+	util.log( "Status: " + scanned_urls.length + " scanned, " + stored_urls.length + " stored, " + scan_urls.length + " to scan" );
 
 	// Stop scanning when no URLs are left to scan or when the limit has been reached.
 	if ( 0 === scan_urls.length || ( 0 !== scan_limit && scan_limit < scanned_urls.length ) ) {
