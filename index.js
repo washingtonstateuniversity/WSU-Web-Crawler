@@ -70,38 +70,149 @@ var queueNext = function() {
 	setTimeout( scanNext, 1500 );
 };
 
+/**
+ * Updates a URLs record with the results of a URL scan.
+ *
+ * @param url {string}
+ * @param data {object}
+ */
+var updateURLData = function( url, data ) {
+	var d = new Date();
+
+	elastic.search( {
+		index: process.env.ES_URL_INDEX,
+		type: "url",
+		body: {
+			size: 1,
+			query: {
+				bool: {
+					must: {
+						term: {
+							url: url
+						}
+					}
+				}
+			}
+		}
+	} ).then( function( response ) {
+		if ( 0 === response.hits.hits.length ) {
+			util.log( "No record found for " + url + " to update?" );
+		} else {
+			elastic.update( {
+				index: process.env.ES_URL_INDEX,
+				type: "url",
+				id: response.hits.hits[ 0 ]._id,
+				body: {
+					doc: {
+						identity: data.identity_version,
+						analytics: data.global_analytics,
+						status_code: data.status_code,
+						redirect_url: data.redirect_url,
+						last_scan: d.getTime()
+					}
+				}
+			} ).then( function() {
+				util.log( "URL updated: " + url );
+			}, function( error ) {
+				util.log( "Error updating URL: " + error.message );
+			} );
+		}
+	} );
+};
+
 // Parse a crawl result for anchor elements and determine if individual href
 // attributes should be marked to scan or to store based on existing data.
 var handleCrawlResult = function( res ) {
 	var $ = res.$;
 
 	return new Promise( function( resolve, reject ) {
+		var reject_message = "";
+
+		var url_update = {
+			identity_version: "unknown",
+			global_analytics: "unknown",
+			status_code: res.statusCode,
+			redirect_url: ''
+		};
+
 		scanned_urls.push( res.options.uri );
 
-		$( "a" ).each( function( index, value ) {
-			if ( undefined !== value.attribs.href && "#" !== value.attribs.href ) {
-				var url = parse_href.get_url( value.attribs.href, res.options.uri );
+		// Watch for URLs that do not respond as a 200 OK.
+		if ( 200 !== res.statusCode ) {
+			// If a 301 or 302, a location for the new URL will be available.
+			if ( 'undefined' !== typeof res.headers.location ) {
+				var url = parse_href.get_url( res.headers.location, res.options.uri );
 
-				if ( false === url ) {
-					return;
-				}
-
-				// If a URL has not been scanned and is not slated to be scanned,
-				// mark it to be scanned.
-				if ( -1 >= scanned_urls.indexOf( url ) && -1 >= scan_urls.indexOf( url ) ) {
+				// Mark un-scanned URLS to be scanned.
+				if ( url && -1 >= scanned_urls.indexOf( url ) && -1 >= scan_urls.indexOf( url ) ) {
 					scan_urls.push( url );
 				}
 
-				// If a URL has not been stored and is not slated to be stored,
-				// mark it to be stored.
-				if ( -1 >= stored_urls.indexOf( url ) && -1 >= store_urls.indexOf( url ) ) {
+				// Mark un-stored URLs to be stored.
+				if ( url && -1 >= stored_urls.indexOf( url ) && -1 >= store_urls.indexOf( url ) ) {
 					store_urls.push( url );
 				}
+
+				url_update.redirect_url = url;
+			} else {
+				// This is likely a 404, 403, 500, or other error code.
+				reject_message = "Error in handleCrawlResult: " + res.statusCode + " response code";
 			}
-		} );
+		} else if ( /http-equiv="refresh"/i.test( res.body ) ) {
+			// PhantomJS has problems processing pages that auto redirect.
+			reject_message = "Error in handleCrawlResult: page body contains http-equiv refresh";
+		} else {
+			// Attempt to determine what identity a site is using.
+			if ( /spine.min.js/i.test( res.body ) ) {
+				url_update.identity_version = 'spine';
+			} else if ( /spine.js/i.test( res.body ) ) {
+				url_update.identity_version = 'spine';
+			} else if ( /identifierv2.js/i.test( res.body ) ) {
+				url_update.identity_version = 'identifierv2';
+			} else {
+				url_update.identity_version = 'other';
+			}
+
+			// Check if global analytics are likely in use.
+			if ( /wsu_analytics/i.test( res.body ) ) {
+				url_update.global_analytics = 'enabled';
+			}
+
+			// Check if enhanced global analytics via GTM are in use.
+			if ( /GTM-K5CHVG/i.test( res.body ) ) {
+				url_update.global_analytics = 'tag_manager';
+			}
+
+			$( "a" ).each( function( index, value ) {
+				if ( undefined !== value.attribs.href && "#" !== value.attribs.href ) {
+					var url = parse_href.get_url( value.attribs.href, res.options.uri );
+
+					if ( false === url ) {
+						return;
+					}
+
+					// If a URL has not been scanned and is not slated to be scanned,
+					// mark it to be scanned.
+					if ( -1 >= scanned_urls.indexOf( url ) && -1 >= scan_urls.indexOf( url ) ) {
+						scan_urls.push( url );
+					}
+
+					// If a URL has not been stored and is not slated to be stored,
+					// mark it to be stored.
+					if ( -1 >= stored_urls.indexOf( url ) && -1 >= store_urls.indexOf( url ) ) {
+						store_urls.push( url );
+					}
+				}
+			} );
+		}
+
+		// Update the URL's record with the results of this scan.
+		updateURLData( res.options.uri, url_update );
 
 		if ( 0 === store_urls.length ) {
 			reject( "Result: No new unique URLs." );
+		} else if ( "" !== reject_message ) {
+			reject( reject_message );
 		} else {
 			resolve();
 		}

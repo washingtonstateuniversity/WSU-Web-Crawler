@@ -23,6 +23,18 @@ var createIndex = function() {
 						domain: {
 							type: "keyword"
 						},
+						identity: {
+							type: "keyword"
+						},
+						analytics: {
+							type: "keyword"
+						},
+						status_code: {
+							type: integer
+						},
+						redirect_url: {
+							type: "keyword"
+						},
 						last_a11y_scan: {
 							type: "date",
 							format: "epoch_millis"
@@ -43,6 +55,10 @@ var createIndex = function() {
 						},
 						force_https_scan: {
 							type: "integer"
+						},
+						last_scan: {
+							type: "date",
+							format: "epoch_millis"
 						}
 					}
 				}
