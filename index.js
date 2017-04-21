@@ -321,7 +321,8 @@ var handleCrawl = function( error, result, done ) {
 
 var c = new Crawler( {
 	maxConnections: 10,
-	maxRedirects: 6,
+	maxRedirects: 0,
+	followRedirect: false,
 	timeout: 4000,
 	callback: handleCrawl
 } );
