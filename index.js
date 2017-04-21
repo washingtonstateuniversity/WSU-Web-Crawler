@@ -184,10 +184,7 @@ var isValidCrawlResult = function( result ) {
 // Outputs a common set of data after individual crawls and, if needed,
 // queues up the next request.
 var finishResult = function() {
-	console.log( "Scanned URLs: " + scanned_urls.length );
-	console.log( "Total Stored: " + stored_urls.length );
-	console.log( "Remaining URLs to scan: " + scan_urls.length );
-	console.log( "" );
+	util.log( "Status: " + scanned_urls.length + " scanned, " + stored_urls.length + " stored, " + scan_urls.length + " remain" );
 
 	// Stop scanning when no URLs are left to scan or when the limit has been reached.
 	if ( 0 === scan_urls.length || ( 0 !== scan_limit && scan_limit < scanned_urls.length ) ) {
