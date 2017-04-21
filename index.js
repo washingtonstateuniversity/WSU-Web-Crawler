@@ -108,7 +108,8 @@ var updateURLData = function( url, data ) {
 						analytics: data.global_analytics,
 						status_code: data.status_code,
 						redirect_url: data.redirect_url,
-						last_scan: d.getTime()
+						last_scan: d.getTime(),
+						anchors: data.anchors
 					}
 				}
 			} ).then( function() {
@@ -132,7 +133,8 @@ var handleCrawlResult = function( res ) {
 			identity_version: "unknown",
 			global_analytics: "unknown",
 			status_code: res.statusCode,
-			redirect_url: ''
+			redirect_url: '',
+			anchors: []
 		};
 
 		scanned_urls.push( res.options.uri );
@@ -201,6 +203,11 @@ var handleCrawlResult = function( res ) {
 					// mark it to be stored.
 					if ( -1 >= stored_urls.indexOf( url ) && -1 >= store_urls.indexOf( url ) ) {
 						store_urls.push( url );
+					}
+
+					// Capture a list of unique anchors found at this URL.
+					if ( -1 >= url_update.anchors.indexOf( url ) ) {
+						url_update.anchors.push( url );
 					}
 				}
 			} );
