@@ -124,8 +124,6 @@ var updateURLData = function( url, data ) {
 // Parse a crawl result for anchor elements and determine if individual href
 // attributes should be marked to scan or to store based on existing data.
 var handleCrawlResult = function( res ) {
-	var $ = res.$;
-
 	return new Promise( function( resolve, reject ) {
 		var reject_message = "";
 
@@ -163,7 +161,11 @@ var handleCrawlResult = function( res ) {
 		} else if ( /http-equiv="refresh"/i.test( res.body ) ) {
 			// PhantomJS has problems processing pages that auto redirect.
 			reject_message = "Error in handleCrawlResult: page body contains http-equiv refresh";
+		} else if ( "undefined" === typeof res.$ ) {
+			reject_message = "Error in handleCrawlResult: Non HTML URL " + res.options.uri;
 		} else {
+			var $ = res.$;
+
 			// Attempt to determine what identity a site is using.
 			if ( /spine.min.js/i.test( res.body ) ) {
 				url_update.identity_version = 'spine';
@@ -283,19 +285,6 @@ var checkURLStore = function() {
 
 };
 
-// Determines if a result is from a valid HTML crawl rather than
-// a static file or other non HTML like response.
-var isValidCrawlResult = function( result ) {
-	return new Promise( function( resolve, reject ) {
-		if ( "undefined" === typeof result.$ ) {
-			scanned_urls.push( result.options.uri );
-			reject( "Skip scanning non HTML URL " + result.options.uri );
-		} else {
-			resolve( result );
-		}
-	} );
-};
-
 // Outputs a common set of data after individual crawls and, if needed,
 // queues up the next request.
 var finishResult = function() {
@@ -313,8 +302,7 @@ var handleCrawl = function( error, result, done ) {
 		util.log( "ERROR: " + error.message );
 		finishResult( result );
 	} else {
-		isValidCrawlResult( result )
-			.then( handleCrawlResult )
+		handleCrawlResult( result )
 			.then( checkURLStore )
 			.then( storeURLs )
 			.then( function() { finishResult();	} )
