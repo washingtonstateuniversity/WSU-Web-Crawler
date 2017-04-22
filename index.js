@@ -161,10 +161,13 @@ var handleCrawlResult = function( res ) {
 				reject_message = "Error in handleCrawlResult: " + res.statusCode + " response code";
 			}
 		} else if ( /http-equiv="refresh"/i.test( res.body ) ) {
+			url_update.status_code = 301;
 
 			// PhantomJS has problems processing pages that auto redirect.
 			reject_message = "Error in handleCrawlResult: page body contains http-equiv refresh";
 		} else if ( "undefined" === typeof res.$ ) {
+			url_update.status_code = 999;
+
 			reject_message = "Error in handleCrawlResult: Non HTML URL " + res.options.uri;
 		} else {
 			var $ = res.$;
