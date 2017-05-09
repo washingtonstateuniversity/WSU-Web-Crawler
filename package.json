@@ -17,9 +17,9 @@
   },
   "homepage": "https://github.com/washingtonstateuniversity/wsu-web-crawler#readme",
   "dependencies": {
-    "crawler": "^1.0.3",
+    "crawler": "^1.0.4",
     "dotenv": "^4.0.0",
-    "elasticsearch": "^13.0.0-rc2",
+    "elasticsearch": "^13.0.0",
     "url": "^0.11.0"
   },
   "devDependencies": {
