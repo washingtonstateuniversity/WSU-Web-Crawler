@@ -242,7 +242,7 @@ var checkURLStore = function() {
 			index: process.env.ES_URL_INDEX,
 			type: "url",
 			body: {
-				size: 5000,
+				size: store_urls.length,
 				query: {
 					bool: {
 						filter: {
