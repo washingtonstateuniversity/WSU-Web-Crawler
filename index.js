@@ -242,7 +242,7 @@ var checkURLStore = function() {
 			index: process.env.ES_URL_INDEX,
 			type: "url",
 			body: {
-				size: 300,
+				size: store_urls.length,
 				query: {
 					bool: {
 						filter: {
@@ -324,8 +324,8 @@ var c = new Crawler( {
 	maxConnections: 10,
 	maxRedirects: 0,
 	followRedirect: false,
-	retries: 1,
-	retryTimeout: 4000,
+	retries: 0,
+	retryTimeout: 1000,
 	timeout: 4000,
 	userAgent: "WSU Web Crawler: web.wsu.edu/crawler/",
 	callback: handleCrawl
