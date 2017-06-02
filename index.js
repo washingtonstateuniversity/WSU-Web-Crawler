@@ -317,6 +317,7 @@ var handleCrawl = function( error, result, done ) {
 };
 
 var c = new Crawler( {
+	rateLimit: 100,
 	maxConnections: 10,
 	maxRedirects: 0,
 	followRedirect: false,
