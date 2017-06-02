@@ -49,6 +49,7 @@ var storeURLs = function( response ) {
 				util.log( urls.length + " URLS stored in bulk to Elasticsearch." );
 				resolve();
 			} else {
+
 				// @todo should some URLs be added back to store_urls?
 				util.log( "Error storing bulk URLs: " + err.message );
 				reject( "Bulk URL storage not successful: " + err.message );
@@ -338,13 +339,12 @@ var queueFoundURLStorage = function() {
 var storeFoundURLs = function() {
 	checkURLStore()
 		.then( storeURLs )
-		.then( function() { queueFoundURLStorage() } )
+		.then( function() { queueFoundURLStorage(); } )
 		.catch( function( error ) {
 			util.log( error );
 			queueFoundURLStorage();
 		} );
 };
-
 
 // Handle the bulk storage of found URLs in another thread.
 queueFoundURLStorage();
