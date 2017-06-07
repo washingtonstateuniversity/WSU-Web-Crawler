@@ -35,6 +35,34 @@ var elastic = new es.Client( {
 	log: "error"
 } );
 
+// Prefills a list of URLs to scan based on those already with an initial set of
+// data stored in Elasticsearch.
+var prefillURLs = function() {
+	elastic.search( {
+		index: process.env.ES_URL_INDEX,
+		type: "url",
+		body: {
+			size: 5000,
+			query: {
+				bool: {
+					must_not: [
+						{
+							exists: {
+								field: "status_code"
+							}
+						}
+					]
+				}
+			}
+		}
+	} ).then( function( response ) {
+		for ( var j = 0, y = response.hits.hits.length; j < y; j++ ) {
+			scan_urls.push( response.hits.hits[ j ]._source.url );
+		}
+		util.log( "Prefill: " + scan_urls.length + " URLs to scan" );
+	} );
+};
+
 // Stores a list of URLs in Elasticsearch with a bulk request.
 var storeURLs = function( response ) {
 	var bulk_body = response.body;
@@ -346,9 +374,6 @@ var c = new Crawler( {
 	callback: handleCrawl
 } );
 
-// Queue just one URL, with default callback
-scanURLs();
-
 var queueFoundURLStorage = function() {
 	setTimeout( storeFoundURLs, 2000 );
 };
@@ -362,6 +387,12 @@ var storeFoundURLs = function() {
 			queueFoundURLStorage();
 		} );
 };
+
+// Prefill URLs to scan from those stored in the index.
+prefillURLs();
+
+// Start scanning URLs.
+scanURLs();
 
 // Handle the bulk storage of found URLs in another thread.
 queueFoundURLStorage();
