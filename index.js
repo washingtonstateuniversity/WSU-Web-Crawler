@@ -13,7 +13,7 @@ var scan_urls = process.env.START_URLS.split( "," );
 var scanned_urls = [];
 
 // Tracks the list of URLs to be stored.
-var store_urls = [];
+var store_urls = process.env.START_URLS.split( "," );
 
 // Tracks the list of URLs stored.
 var stored_urls = [];
