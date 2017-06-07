@@ -29,6 +29,9 @@ var createIndex = function() {
 						analytics: {
 							type: "keyword"
 						},
+						content: {
+							type: "text"
+						},
 						status_code: {
 							type: "integer"
 						},

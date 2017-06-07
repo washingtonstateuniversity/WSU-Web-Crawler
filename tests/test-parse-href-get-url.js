@@ -1,4 +1,5 @@
-var test = require('tape');
+/*jshint scripturl:true*/
+var test = require( "tape" );
 var ParseHref = require( "../lib/parse-href" );
 
 var source_uri = "https://wsu.edu";
@@ -41,7 +42,7 @@ test( "A domain without a protocol should be treated as a relative path.", funct
 
 	t.equal( url, "https://wsu.edu/google.com" );
 	t.end();
-})
+} );
 
 test( "A filename without a protocol should be treated as a relative path.", function( t ) {
 	var url = app.get_url( "asuperlongname.aspx", source_uri );
