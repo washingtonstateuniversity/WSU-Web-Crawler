@@ -45,6 +45,13 @@ The "url" type will have these mapped properties:
 
 This library uses several of these properties and provides a structure that can be used in the future by other libraries.
 
+### Status Code
+
+In most cases, the standard status code returned for a request is logged. For some URLs, we hijack this status code so that we can apply different querying logic in the future.
+
+* PDF URLs that respond with `200` are logged with the status code of `900`.
+* Other URLs that respond with `200` but are filled with non-HTML content are logged with the status code of `999`.
+
 ## Start the crawler
 
 Once everything is configured, run `node crawl.js` to start crawling.

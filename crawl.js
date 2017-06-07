@@ -27,7 +27,7 @@ var parse_href = new ParseHref( {
 	flagged_domains: process.env.SKIP_DOMAINS.split( "," ),
 
 	// These file extensions are flagged to not be scanned.
-	flagged_extensions: [ "pdf", "jpg", "jpeg", "gif", "xls", "doc", "docx", "png" ]
+	flagged_extensions: [ "jpg", "jpeg", "gif", "xls", "doc", "docx", "png" ]
 } );
 
 var elastic = new es.Client( {
@@ -183,6 +183,9 @@ var handleCrawlResult = function( res ) {
 				// This is likely a 404, 403, 500, or other error code.
 				reject_message = "Error in handleCrawlResult: " + res.statusCode + " response code";
 			}
+		} else if ( "pdf" === res.request.uri.pathname.split( "." ).pop() ) {
+			url_update.status_code = 900;
+
 		} else if ( /http-equiv="refresh"/i.test( res.body ) ) {
 			url_update.status_code = 301;
 
