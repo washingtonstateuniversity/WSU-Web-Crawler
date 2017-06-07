@@ -31,6 +31,11 @@ The "url" type will have these mapped properties:
 
 * url: keyword
 * domain: keyword
+* identity: keyword
+* analytics: keyword
+* content: text
+* status_code: integer
+* redirect_url: keyword
 * last_a11y_scan: date, epoch_millis
 * force_a11y_scan: integer
 * last_search_scan: date, epoch_millis
@@ -38,11 +43,11 @@ The "url" type will have these mapped properties:
 * last_https_scan: date, epoch_millis
 * force_https_scan: integer
 
-This library only uses the `url` and `domain` data, but sets up a structure that can be used in the future by other libraries.
+This library uses several of these properties and provides a structure that can be used in the future by other libraries.
 
 ## Start the crawler
 
-Once everything is configured, run `node index.js` to start crawling.
+Once everything is configured, run `node crawl.js` to start crawling.
 
 ## Tests
 
