@@ -4,7 +4,7 @@ module.exports = function( grunt ) {
 
 		jscs: {
 			scripts: {
-				src: [ "./*.js" ],
+				src: [ "./*.js", "./lib/*.js", "./tests/*.js" ],
 				options: {
 					preset: "jquery",
 					requireCamelCaseOrUpperCaseIdentifiers: false, // We rely on name_name too much to change them all.
@@ -27,7 +27,7 @@ module.exports = function( grunt ) {
 				}
 			},
 			crawler_script: {
-				src: [ "./*.js" ],
+				src: [ "./*.js", "./lib/*.js", "./tests/*.js" ],
 				options: {
 					bitwise: true,
 					curly: true,
