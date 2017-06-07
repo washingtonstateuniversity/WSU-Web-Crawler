@@ -160,6 +160,11 @@ var handleCrawlResult = function( res ) {
 
 			// PhantomJS has problems processing pages that auto redirect.
 			reject_message = "Error in handleCrawlResult: page body contains http-equiv refresh";
+		} else if ( /top.location.href/i.test( res.body ) || /window.location.href/i.test( res.body ) ) {
+			url_update.status_code = 301;
+
+			// PhantomJS has problems processing pages that auto redirect.
+			reject_message = "Error in handleCrawlResult: page body appears to contain refresh script";
 		} else if ( "undefined" === typeof res.$ ) {
 			url_update.status_code = 999;
 
