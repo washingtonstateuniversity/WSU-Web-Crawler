@@ -46,12 +46,10 @@ var storeURLs = function( response ) {
 		}, function( err, response ) {
 			if ( undefined !== typeof response ) {
 				stored_urls = stored_urls.concat( urls );
-				util.log( urls.length + " URLS stored in bulk to Elasticsearch." );
 				resolve();
 			} else {
 
 				// @todo should some URLs be added back to store_urls?
-				util.log( "Error storing bulk URLs: " + err.message );
 				reject( "Bulk URL storage not successful: " + err.message );
 			}
 		} );
@@ -60,7 +58,7 @@ var storeURLs = function( response ) {
 
 // Queues all waiting URLs for scan.
 var scanURLs = function() {
-	util.log( "Added " + scan_urls.length + " URLs to queue" );
+	util.log( "Queue: " + scan_urls.length + " URLs" );
 	c.queue( scan_urls );
 	scan_urls = [];
 };
@@ -92,7 +90,7 @@ var updateURLData = function( url, data ) {
 	} ).then( function( response ) {
 		if ( 0 === response.hits.hits.length ) {
 			scan_urls.push( url ); // Requeue the URL to be scanned.
-			util.log( "No record found for " + url + " to update?" );
+			util.log( "Error: " + url + " No record found to update" );
 		} else {
 			elastic.update( {
 				index: process.env.ES_URL_INDEX,
@@ -110,10 +108,10 @@ var updateURLData = function( url, data ) {
 				}
 			} ).then( function() {
 				scanned_urls.push( url );
-				util.log( "URL updated: " + url );
+				util.log( "Updated: " + url );
 			}, function( error ) {
 				scan_urls.push( url );
-				util.log( "Error updating URL: " + error.message );
+				util.log( "Error: " + url + " " + error.message );
 			} );
 		}
 	} );
@@ -293,7 +291,7 @@ var checkURLStore = function() {
 // Outputs a common set of data after individual crawls and, if needed,
 // queues up the next request.
 var finishResult = function() {
-	util.log( "Status: " + scanned_urls.length + " scanned, " + stored_urls.length + " stored, " + scan_urls.length + " to scan" );
+	util.log( "Status: " + scanned_urls.length + " scanned, " + stored_urls.length + " stored" );
 
 	// Continue scanning until no URLs are left.
 	if ( 0 !== scan_urls.length  ) {
