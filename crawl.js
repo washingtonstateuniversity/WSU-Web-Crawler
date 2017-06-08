@@ -27,7 +27,7 @@ var parse_href = new ParseHref( {
 	flagged_domains: process.env.SKIP_DOMAINS.split( "," ),
 
 	// These file extensions are flagged to not be scanned.
-	flagged_extensions: [ "jpg", "jpeg", "gif", "xls", "doc", "docx", "png" ]
+	flagged_extensions: [ "jpg", "jpeg", "gif", "png" ]
 } );
 
 var elastic = new es.Client( {
@@ -160,6 +160,8 @@ var handleCrawlResult = function( res ) {
 			anchors: []
 		};
 
+		var file_extension = res.request.uri.pathname.split( "." ).pop().toLowerCase();
+
 		// Watch for URLs that do not respond as a 200 OK.
 		if ( 200 !== res.statusCode ) {
 
@@ -183,9 +185,16 @@ var handleCrawlResult = function( res ) {
 				// This is likely a 404, 403, 500, or other error code.
 				reject_message = "Error in handleCrawlResult: " + res.statusCode + " response code";
 			}
-		} else if ( "pdf" === res.request.uri.pathname.split( "." ).pop().toLowerCase() ) {
+		} else if ( "pdf" === file_extension ) {
 			url_update.status_code = 900;
-
+		} else if ( "doc" === file_extension || "docx" === file_extension ) {
+			url_update.status_code = 901;
+		} else if ( "xls" === file_extension || "xlsx" === file_extension || "xlsm" === file_extension || "xlsb" === file_extension ) {
+			url_update.status_code = 902;
+		} else if ( "ppt" === file_extension || "pptx" === file_extension || "pptm" === file_extension ) {
+			url_update.status_code = 903;
+		} else if ( "zip" === file_extension ) {
+			url_update.status_code = 904;
 		} else if ( /http-equiv="refresh"/i.test( res.body ) ) {
 			url_update.status_code = 301;
 
