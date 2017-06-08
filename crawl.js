@@ -183,7 +183,7 @@ var handleCrawlResult = function( res ) {
 				// This is likely a 404, 403, 500, or other error code.
 				reject_message = "Error in handleCrawlResult: " + res.statusCode + " response code";
 			}
-		} else if ( "pdf" === res.request.uri.pathname.split( "." ).pop() ) {
+		} else if ( "pdf" === res.request.uri.pathname.split( "." ).pop().toLowerCase() ) {
 			url_update.status_code = 900;
 
 		} else if ( /http-equiv="refresh"/i.test( res.body ) ) {
