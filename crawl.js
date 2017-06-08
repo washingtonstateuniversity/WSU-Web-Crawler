@@ -187,7 +187,6 @@ var handleCrawlResult = function( res ) {
 			}
 		} else if ( "pdf" === file_extension ) {
 			url_update.status_code = 900;
-
 		} else if ( "doc" === file_extension || "docx" === file_extension ) {
 			url_update.status_code = 901;
 		} else if ( "xls" === file_extension || "xlsx" === file_extension || "xlsm" === file_extension || "xlsb" === file_extension ) {
