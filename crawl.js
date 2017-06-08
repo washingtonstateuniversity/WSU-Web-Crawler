@@ -15,8 +15,8 @@ var scanned_urls = [];
 // Tracks the list of URLs to be stored.
 var store_urls = process.env.START_URLS.split( "," );
 
-// Tracks the list of URLs stored.
-var stored_urls = [];
+// Tracks the number of URLs stored.
+var stored_urls = 0;
 
 var parse_href = new ParseHref( {
 
@@ -73,7 +73,7 @@ var storeURLs = function( response ) {
 			body: bulk_body
 		}, function( err, response ) {
 			if ( undefined !== typeof response ) {
-				stored_urls = stored_urls.concat( urls );
+				stored_urls = stored_urls + urls.length;
 				resolve();
 			} else {
 
@@ -175,7 +175,7 @@ var handleCrawlResult = function( res ) {
 				}
 
 				// Mark un-stored URLs to be stored.
-				if ( url && -1 >= stored_urls.indexOf( url ) && -1 >= store_urls.indexOf( url ) ) {
+				if ( url && -1 >= store_urls.indexOf( url ) ) {
 					store_urls.push( url );
 				}
 
@@ -247,9 +247,8 @@ var handleCrawlResult = function( res ) {
 						scan_urls.push( url );
 					}
 
-					// If a URL has not been stored and is not slated to be stored,
-					// mark it to be stored.
-					if ( -1 >= stored_urls.indexOf( url ) && -1 >= store_urls.indexOf( url ) ) {
+					// If a URL is not slated to be stored, mark it to be stored.
+					if ( -1 >= store_urls.indexOf( url ) ) {
 						store_urls.push( url );
 					}
 
@@ -320,7 +319,6 @@ var checkURLStore = function() {
 					var index = local_store_urls.indexOf( resp.hits.hits[ j ]._source.url );
 					if ( -1 < index ) {
 						local_store_urls.splice( index, 1 );
-						stored_urls.push( resp.hits.hits[ j ]._source.url );
 					}
 				}
 			}
@@ -350,7 +348,7 @@ var checkURLStore = function() {
 // Outputs a common set of data after individual crawls and, if needed,
 // queues up the next request.
 var finishResult = function() {
-	util.log( "Status: " + scanned_urls.length + " scanned, " + stored_urls.length + " stored" );
+	util.log( "Status: " + scanned_urls.length + " scanned, " + stored_urls + " stored" );
 
 	// Continue scanning until no URLs are left.
 	if ( 0 !== scan_urls.length  ) {
