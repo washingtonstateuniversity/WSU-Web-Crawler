@@ -50,6 +50,10 @@ This library uses several of these properties and provides a structure that can 
 In most cases, the standard status code returned for a request is logged. For some URLs, we hijack this status code so that we can apply different querying logic in the future.
 
 * PDF URLs that respond with `200` are logged with the status code of `900`.
+* `doc` and `docx` URLs that respond with `200` are logged with the status code of `901`.
+* Spreadsheet URLs that respond with `200` are logged with the status code of `902`.
+* Powerpoint URLs that respond with `200` are logged with the status code of `903`.
+* Zip URLs that respond with `200` are logged with the status code of `904`.
 * Other URLs that respond with `200` but are filled with non-HTML content are logged with the status code of `999`.
 
 ## Local Development
