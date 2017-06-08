@@ -107,6 +107,13 @@ test( "A full URL with flagged file extension should report as false.", function
 	t.end();
 } );
 
+test( "A full URL with flagged file extension in uppercase should report as false.", function( t ) {
+	var url = app.get_url( "https://wsu.edu/files/2012.PDF", source_uri );
+
+	t.false( url );
+	t.end();
+} );
+
 test( "A full URL with flagged file extension and query string should report as false.", function( t ) {
 	var url = app.get_url( "https://wsu.edu/files/2012.pdf?abc=123", source_uri );
 
