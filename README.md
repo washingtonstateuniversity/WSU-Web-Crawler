@@ -52,10 +52,29 @@ In most cases, the standard status code returned for a request is logged. For so
 * PDF URLs that respond with `200` are logged with the status code of `900`.
 * Other URLs that respond with `200` but are filled with non-HTML content are logged with the status code of `999`.
 
-## Start the crawler
+## Local Development
+
+Run `npm install` to install all production and development dependencies.
+
+### Start the crawler
 
 Once everything is configured, run `node crawl.js` to start crawling.
 
-## Tests
+### Tests
 
 A basic suite of tests using [tape](https://github.com/substack/tape) is available. Run these with `node tests/*.js`.
+
+## Deployment at WSU
+
+A `Makefile` is included with the package to help build and deploy the script.
+
+* Run `make build` to build a production copy that has a lighter `node_modules` footprint.
+* Run `make deploy` to push a copy to production.
+
+Manual work is still necessary on the server to replace the current running instance of the crawler.
+
+* Navigate to `/home/ucadmin/web-crawler/`
+* Extract `wsu-web-crawler.tar` into a new directory such as `url-crawler-002`
+* Copy the current `.env` file from the previous crawler directory.
+* Make sure all existing processes for the crawler are stopped.
+* Start the new crawler process from its directory with `nohup node crawl.js >> ../url-crawler.log &`
