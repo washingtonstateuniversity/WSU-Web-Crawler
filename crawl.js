@@ -379,11 +379,8 @@ function checkURLStore() {
 			var found_urls = local_store_urls.length;
 			var local_urls = local_store_urls;
 			local_store_urls = null;
-			var indexed_urls = 0;
 
 			if ( 0 !== resp.hits.hits.length ) {
-				indexed_urls = resp.hits.total;
-
 				for ( var j = 0, y = resp.hits.hits.length; j < y; j++ ) {
 					var index = local_urls.indexOf( resp.hits.hits[ j ]._source.url );
 					if ( -1 < index ) {
