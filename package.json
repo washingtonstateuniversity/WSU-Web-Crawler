@@ -1,6 +1,6 @@
 {
   "name": "wsu-web-crawler",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Crawls a given domain and stores results in Elasticsearch",
   "main": "index.js",
   "scripts": {

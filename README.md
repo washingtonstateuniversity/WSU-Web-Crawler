@@ -1,5 +1,7 @@
 # WSU Web Crawler
 
+[![Build Status](https://travis-ci.org/washingtonstateuniversity/WSU-Web-Crawler.svg?branch=master)](https://travis-ci.org/washingtonstateuniversity/WSU-Web-Crawler)
+
 Crawls URLs for URLs and stores URLs in Elasticsearch.
 
 ## Overview
