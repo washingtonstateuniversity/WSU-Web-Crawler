@@ -6,17 +6,16 @@ var util = require( "util" );
 
 require( "dotenv" ).config();
 
-// Tracks the list of URLs to be scanned.
-var scan_urls = process.env.START_URLS.split( "," );
+var wsu_web_crawler = {
+	scan_urls: [],     // Tracks the list of URLs to be scanned.
+	scanned_urls: [],  // Tracks the list of URLs scanned.
+	store_urls: [],    // Tracks the list of URLs to be stored.
+	stored_urls: 0,    // Tracks the number of URLs stored.
+	queue_lock: false  // Used to lock the crawler queue.
+};
 
-// Tracks the list of URLs scanned.
-var scanned_urls = [];
-
-// Tracks the list of URLs to be stored.
-var store_urls = process.env.START_URLS.split( "," );
-
-// Tracks the number of URLs stored.
-var stored_urls = 0;
+wsu_web_crawler.scan_urls = process.env.START_URLS.split( "," );
+wsu_web_crawler.store_urls = process.env.START_URLS.split( "," );
 
 var parse_href = new ParseHref( {
 
@@ -30,19 +29,31 @@ var parse_href = new ParseHref( {
 	flagged_extensions: [ "jpg", "jpeg", "gif", "png" ]
 } );
 
-var elastic = new es.Client( {
-	host: process.env.ES_HOST,
-	log: "error"
-} );
+/**
+ * Retrieve a new instance of a configured Elasticsearch client.
+ *
+ * This allows us to destroy the client after each use and prevent
+ * memory leaks.
+ *
+ * @returns {es.Client}
+ */
+function elasticClient() {
+	return new es.Client( {
+		host: process.env.ES_HOST,
+		log: "error"
+	} );
+}
 
 // Prefills a list of URLs to scan based on those already with an initial set of
 // data stored in Elasticsearch.
-var prefillURLs = function() {
+function prefillURLs() {
+	var elastic = elasticClient();
+
 	elastic.search( {
 		index: process.env.ES_URL_INDEX,
 		type: "url",
 		body: {
-			size: 5000,
+			size: 100,
 			query: {
 				bool: {
 					must_not: [
@@ -57,39 +68,50 @@ var prefillURLs = function() {
 		}
 	} ).then( function( response ) {
 		for ( var j = 0, y = response.hits.hits.length; j < y; j++ ) {
-			scan_urls.push( response.hits.hits[ j ]._source.url );
+			wsu_web_crawler.scan_urls.push( response.hits.hits[ j ]._source.url );
 		}
-		util.log( "Prefill: " + scan_urls.length + " URLs to scan" );
+		util.log( "Prefill: " + wsu_web_crawler.scan_urls.length + " URLs to scan" );
+	} ).catch( function( error ) {
+		util.log( "Error (prefillURLs): " + error );
 	} );
-};
+
+	elastic = null;
+}
 
 // Stores a list of URLs in Elasticsearch with a bulk request.
-var storeURLs = function( response ) {
-	var bulk_body = response.body;
-	var urls = response.urls;
-
+function storeURLs( response ) {
 	return new Promise( function( resolve, reject ) {
-		elastic.bulk( {
-			body: bulk_body
-		}, function( err, response ) {
-			if ( undefined !== typeof response ) {
-				stored_urls = stored_urls + urls.length;
-				resolve();
-			} else {
+		var bulk_body = response.body;
+		var urls = response.urls;
 
+		var elastic = elasticClient();
+		elastic.bulk( { body: bulk_body } )
+			.then( function( response ) {
+				wsu_web_crawler.stored_urls = wsu_web_crawler.stored_urls + urls.length;
+				resolve();
+			} )
+			.catch( function( error ) {
 				// @todo should some URLs be added back to store_urls?
-				reject( "Bulk URL storage not successful: " + err.message );
-			}
-		} );
+				reject( "Bulk URL storage not successful: " + error.message );
+			} );
 	} );
-};
+}
 
 // Queues all waiting URLs for scan.
-var scanURLs = function() {
-	util.log( "Queue: " + scan_urls.length + " URLs" );
-	c.queue( scan_urls );
-	scan_urls = [];
-};
+function scanURLs() {
+	if ( false === wsu_web_crawler.queue_lock ) {
+		var queue_urls = wsu_web_crawler.scan_urls.slice( 0, 101 );
+		wsu_web_crawler.scan_urls = wsu_web_crawler.scan_urls.slice( 101 );
+
+		util.log( "Queue: Add " + queue_urls.length + " URLs to queue of " + c.queueSize + " from backlog of " + wsu_web_crawler.scan_urls.length );
+		c.queue( queue_urls );
+	}
+
+	if ( false === wsu_web_crawler.queue_lock && 100 < c.queueSize ) {
+		util.log( "Queue: Temporarily lock crawler queue" );
+		wsu_web_crawler.queue_lock = true;
+	}
+}
 
 /**
  * Updates a URLs record with the results of a URL scan.
@@ -97,9 +119,8 @@ var scanURLs = function() {
  * @param url {string}
  * @param data {object}
  */
-var updateURLData = function( url, data ) {
-	var d = new Date();
-
+function updateURLData( url, data ) {
+	var elastic = elasticClient();
 	elastic.search( {
 		index: process.env.ES_URL_INDEX,
 		type: "url",
@@ -116,10 +137,13 @@ var updateURLData = function( url, data ) {
 			}
 		}
 	} ).then( function( response ) {
+		var d = new Date();
+
 		if ( 0 === response.hits.hits.length ) {
-			scan_urls.push( url ); // Requeue the URL to be scanned.
+			wsu_web_crawler.scan_urls.push( url ); // Requeue the URL to be scanned.
 			util.log( "Error: " + url + " No record found to update" );
 		} else {
+			var elastic = elasticClient();
 			elastic.update( {
 				index: process.env.ES_URL_INDEX,
 				type: "url",
@@ -135,20 +159,24 @@ var updateURLData = function( url, data ) {
 						anchors: data.anchors
 					}
 				}
-			} ).then( function() {
-				scanned_urls.push( url );
+			} )
+			.then( function() {
+				wsu_web_crawler.scanned_urls.push( url );
 				util.log( "Updated: " + url );
-			}, function( error ) {
-				scan_urls.push( url );
-				util.log( "Error: " + url + " " + error.message );
+			} )
+			.catch( function( error ) {
+				wsu_web_crawler.scan_urls.push(url);
+				util.log("Error (updateURLData 2): " + url + " " + error.message );
 			} );
 		}
+	} ).catch( function( error ) {
+		util.log( "Error (updateURLData 1): " + error.message )
 	} );
-};
+}
 
 // Parse a crawl result for anchor elements and determine if individual href
 // attributes should be marked to scan or to store based on existing data.
-var handleCrawlResult = function( res ) {
+function handleCrawlResult( res ) {
 	return new Promise( function( resolve, reject ) {
 		var reject_message = "";
 
@@ -170,20 +198,20 @@ var handleCrawlResult = function( res ) {
 				var url = parse_href.get_url( res.headers.location, res.options.uri );
 
 				// Mark un-scanned URLS to be scanned.
-				if ( url && url !== res.options.uri && -1 >= scanned_urls.indexOf( url ) && -1 >= scan_urls.indexOf( url ) ) {
-					scan_urls.push( url );
+				if ( url && url !== res.options.uri && -1 >= wsu_web_crawler.scanned_urls.indexOf( url ) && -1 >= wsu_web_crawler.scan_urls.indexOf( url ) ) {
+					wsu_web_crawler.scan_urls.push( url );
 				}
 
 				// Mark un-stored URLs to be stored.
-				if ( url && -1 >= store_urls.indexOf( url ) ) {
-					store_urls.push( url );
+				if ( url && -1 >= wsu_web_crawler.store_urls.indexOf( url ) ) {
+					wsu_web_crawler.store_urls.push( url );
 				}
 
 				url_update.redirect_url = url;
 			} else {
 
 				// This is likely a 404, 403, 500, or other error code.
-				reject_message = "Error in handleCrawlResult: " + res.statusCode + " response code";
+				reject_message = res.statusCode + " response code";
 			}
 		} else if ( "pdf" === file_extension ) {
 			url_update.status_code = 900;
@@ -199,16 +227,16 @@ var handleCrawlResult = function( res ) {
 			url_update.status_code = 301;
 
 			// PhantomJS has problems processing pages that auto redirect.
-			reject_message = "Error in handleCrawlResult: page body contains http-equiv refresh";
+			reject_message = "Page body contains http-equiv refresh";
 		} else if ( /top.location.href/i.test( res.body ) || /window.location.href/i.test( res.body ) ) {
 			url_update.status_code = 301;
 
 			// PhantomJS has problems processing pages that auto redirect.
-			reject_message = "Error in handleCrawlResult: page body appears to contain refresh script";
+			reject_message = "Page body appears to contain refresh script";
 		} else if ( "undefined" === typeof res.$ ) {
 			url_update.status_code = 999;
 
-			reject_message = "Error in handleCrawlResult: Non HTML URL " + res.options.uri;
+			reject_message = "Non HTML URL " + res.options.uri;
 		} else {
 			var $ = res.$;
 
@@ -243,13 +271,13 @@ var handleCrawlResult = function( res ) {
 
 					// If a URL has not been scanned and is not slated to be scanned,
 					// mark it to be scanned.
-					if ( url !== res.options.uri && -1 >= scanned_urls.indexOf( url ) && -1 >= scan_urls.indexOf( url ) ) {
-						scan_urls.push( url );
+					if ( url !== res.options.uri && -1 >= wsu_web_crawler.scanned_urls.indexOf( url ) && -1 >= wsu_web_crawler.scan_urls.indexOf( url ) ) {
+						wsu_web_crawler.scan_urls.push( url );
 					}
 
 					// If a URL is not slated to be stored, mark it to be stored.
-					if ( -1 >= store_urls.indexOf( url ) ) {
-						store_urls.push( url );
+					if ( -1 >= wsu_web_crawler.store_urls.indexOf( url ) ) {
+						wsu_web_crawler.store_urls.push( url );
 					}
 
 					// Capture a list of unique anchors found at this URL.
@@ -276,7 +304,7 @@ var handleCrawlResult = function( res ) {
 		// Update the URL's record with the results of this scan.
 		updateURLData( res.options.uri, url_update );
 
-		if ( 0 === store_urls.length ) {
+		if ( 0 === wsu_web_crawler.store_urls.length ) {
 			reject( "Result: No new unique URLs." );
 		} else if ( "" !== reject_message ) {
 			reject( reject_message );
@@ -284,15 +312,20 @@ var handleCrawlResult = function( res ) {
 			resolve();
 		}
 	} );
-};
+}
 
 // Checks a list of URLs against those currently stored in Elasticsearch
 // so that storage of duplicate URLs is avoided.
-var checkURLStore = function() {
-	var local_store_urls = store_urls;
-	store_urls = [];
-
+function checkURLStore() {
 	return new Promise( function( resolve, reject ) {
+		var local_store_urls = wsu_web_crawler.store_urls;
+		wsu_web_crawler.store_urls = [];
+
+		if ( 0 === local_store_urls.length ) {
+			reject( "Bulk Result: No URLs passed to attempt lookup" );
+		}
+
+		var elastic = elasticClient();
 		elastic.search( {
 			index: process.env.ES_URL_INDEX,
 			type: "url",
@@ -310,93 +343,141 @@ var checkURLStore = function() {
 			}
 		} ).then( function( resp ) {
 			var found_urls = local_store_urls.length;
+			var local_urls = local_store_urls;
+			local_store_urls = null;
 			var indexed_urls = 0;
 
 			if ( 0 !== resp.hits.hits.length ) {
 				indexed_urls = resp.hits.total;
 
 				for ( var j = 0, y = resp.hits.hits.length; j < y; j++ ) {
-					var index = local_store_urls.indexOf( resp.hits.hits[ j ]._source.url );
+					var index = local_urls.indexOf( resp.hits.hits[ j ]._source.url );
 					if ( -1 < index ) {
-						local_store_urls.splice( index, 1 );
+						local_urls.splice( index, 1 );
 					}
 				}
 			}
 
 			var bulk_body = [];
 
-			for ( var i = 0, x = local_store_urls.length; i < x; i++ ) {
-				var url = parse_url.parse( local_store_urls[ i ] );
+			for ( var i = 0, x = found_urls; i < x; i++ ) {
+				if ( "undefined" === typeof local_urls[ i ] ) {
+					continue;
+				}
+
+				var url = parse_url.parse( local_urls[ i ] );
 
 				bulk_body.push( { index: { _index: process.env.ES_URL_INDEX, _type: "url" } } );
-				bulk_body.push( { url: local_store_urls[ i ], domain: url.hostname } );
+				bulk_body.push( { url: local_urls[ i ], domain: url.hostname } );
 			}
 
 			if ( 0 !== bulk_body.length ) {
-				util.log( "Result: " + found_urls + " found, " + indexed_urls + " exist, " + local_store_urls.length + " new" );
-				resolve( { body: bulk_body, urls: local_store_urls } );
+				util.log( "Bulk Result: Stored " + local_urls.length + " new URLs" );
+				resolve( { body: bulk_body, urls: local_urls } );
 			} else {
-				reject( "Result: " + found_urls + " found, " + indexed_urls + " exist, 0 new" );
+				reject( "Bulk Result: No new URLs found" );
 			}
-		}, function( err ) {
-			reject( "Error in checkURLStore:: " + err.message );
+		} ).catch( function( err ) {
+			reject( "Error (checkURLStore): " + err.message );
 		} );
 	} );
-
-};
+}
 
 // Outputs a common set of data after individual crawls and, if needed,
 // queues up the next request.
-var finishResult = function() {
-	util.log( "Status: " + scanned_urls.length + " scanned, " + stored_urls + " stored" );
+function finishResult() {
+	util.log( "Status: " + wsu_web_crawler.scanned_urls.length + " scanned, " + wsu_web_crawler.stored_urls + " stored, " + c.queueSize + " queued");
 
-	// Continue scanning until no URLs are left.
-	if ( 0 !== scan_urls.length  ) {
+	// If the queue is locked and the queue size is 0, reset the crawler.
+	if ( true === wsu_web_crawler.queue_lock && 0 < wsu_web_crawler.scan_urls.length && 0 === c.queueSize ) {
+		util.log( "Queue: Reset queue object" );
+		c = '';
+		c = getCrawler();
+		wsu_web_crawler.queue_lock = false;
+	}
+
+	// If the queue is not locked, continue scanning.
+	if ( false === wsu_web_crawler.queue_lock ) {
 		scanURLs();
 	}
-};
+}
 
-// A callback for Crawler
-var handleCrawl = function( error, result, done ) {
+/**
+ * Handle crawl callbacks from node-crawler.
+ *
+ * @param {string} error
+ * @param {object} result
+ * @param {method} done
+ */
+function handleCrawl( error, result, done ) {
 	if ( error ) {
-		util.log( "ERROR: " + error.message );
-		finishResult( result );
+		finishResult();
 	} else {
 		handleCrawlResult( result )
-			.then( function() { finishResult();	} )
+			.then( finishResult )
 			.catch( function( error ) {
-				util.log( error );
+				util.log( "Error (handleCrawl): " + error );
 				finishResult();
 			} );
 	}
 	done();
-};
+}
 
-var c = new Crawler( {
-	rateLimit: 100,
-	maxConnections: 10,
-	maxRedirects: 0,
-	followRedirect: false,
-	retries: 0,
-	retryTimeout: 1000,
-	timeout: 4000,
-	userAgent: "WSU Web Crawler: web.wsu.edu/crawler/",
-	callback: handleCrawl
-} );
+/**
+ * Handle error messages generated by node-crawler.
+ *
+ * This is a custom log handler that is passed to the new
+ * Crawler instance.
+ *
+ * @param {string} type
+ * @param {string} message
+ */
+function handleCrawlLog( type, message ) {
+	if ( 'error' === type || 'critical' === type ) {
+		util.log( "Error (Node Crawler): " + message );
+	}
+}
 
-var queueFoundURLStorage = function() {
-	setTimeout( storeFoundURLs, 2000 );
-};
+/**
+ * Retrieve a new instance of the Crawler from node-crawler.
+ *
+ * This allows us to handle a limited number of crawls through a Crawler
+ * instance before freeing up any memory used by those processes.
+ *
+ * @returns {Crawler}
+ */
+function getCrawler() {
+	return new Crawler( {
+		rateLimit: 100,
+		maxConnections: 10,
+		maxRedirects: 0,
+		followRedirect: false,
+		retries: 0,
+		retryTimeout: 1000,
+		timeout: 4000,
+		userAgent: "WSU Web Crawler: web.wsu.edu/crawler/",
+		callback: handleCrawl,
+		logger: {
+			log: handleCrawlLog
+		}
+	} );
+}
 
-var storeFoundURLs = function() {
+/**
+ * Process a list of URLs to be sent in bulk to the Elasticsearch
+ * index. Repeat this process every 2 seconds.
+ */
+function storeFoundURLs() {
 	checkURLStore()
 		.then( storeURLs )
-		.then( function() { queueFoundURLStorage(); } )
+		.then( function() { setTimeout( storeFoundURLs, 2000 ); } )
 		.catch( function( error ) {
 			util.log( error );
-			queueFoundURLStorage();
+			setTimeout( storeFoundURLs, 2000 );
 		} );
-};
+}
+
+var c = getCrawler();
 
 // Prefill URLs to scan from those stored in the index.
 prefillURLs();
@@ -405,4 +486,4 @@ prefillURLs();
 scanURLs();
 
 // Handle the bulk storage of found URLs in another thread.
-queueFoundURLStorage();
+setTimeout( storeFoundURLs, 2000 );
