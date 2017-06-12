@@ -341,7 +341,7 @@ function handleCrawlResult( res ) {
 		if ( 0 === wsu_web_crawler.store_urls.length ) {
 			reject( "Result: No new unique URLs." );
 		} else if ( "" !== reject_message ) {
-			reject( reject_message );
+			reject( "Error (handleCrawlResult): " + reject_message );
 		} else {
 			resolve();
 		}
@@ -411,8 +411,8 @@ function checkURLStore() {
 			} else {
 				reject( "Bulk Result: No new URLs found" );
 			}
-		} ).catch( function( err ) {
-			reject( "Error (checkURLStore): " + err.message );
+		} ).catch( function( error ) {
+			reject( error.message );
 		} );
 	} );
 }
