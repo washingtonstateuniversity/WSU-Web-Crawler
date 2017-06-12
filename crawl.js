@@ -86,11 +86,12 @@ function storeURLs( response ) {
 
 		var elastic = elasticClient();
 		elastic.bulk( { body: bulk_body } )
-			.then( function( response ) {
+			.then( function() {
 				wsu_web_crawler.stored_urls = wsu_web_crawler.stored_urls + urls.length;
 				resolve();
 			} )
 			.catch( function( error ) {
+
 				// @todo should some URLs be added back to store_urls?
 				reject( "Bulk URL storage not successful: " + error.message );
 			} );
@@ -165,12 +166,12 @@ function updateURLData( url, data ) {
 				util.log( "Updated: " + url );
 			} )
 			.catch( function( error ) {
-				wsu_web_crawler.scan_urls.push(url);
-				util.log("Error (updateURLData 2): " + url + " " + error.message );
+				wsu_web_crawler.scan_urls.push( url );
+				util.log( "Error (updateURLData 2): " + url + " " + error.message );
 			} );
 		}
 	} ).catch( function( error ) {
-		util.log( "Error (updateURLData 1): " + error.message )
+		util.log( "Error (updateURLData 1): " + error.message );
 	} );
 }
 
@@ -386,12 +387,12 @@ function checkURLStore() {
 // Outputs a common set of data after individual crawls and, if needed,
 // queues up the next request.
 function finishResult() {
-	util.log( "Status: " + wsu_web_crawler.scanned_urls.length + " scanned, " + wsu_web_crawler.stored_urls + " stored, " + c.queueSize + " queued");
+	util.log( "Status: " + wsu_web_crawler.scanned_urls.length + " scanned, " + wsu_web_crawler.stored_urls + " stored, " + c.queueSize + " queued" );
 
 	// If the queue is locked and the queue size is 0, reset the crawler.
 	if ( true === wsu_web_crawler.queue_lock && 0 < wsu_web_crawler.scan_urls.length && 0 === c.queueSize ) {
 		util.log( "Queue: Reset queue object" );
-		c = '';
+		c = "";
 		c = getCrawler();
 		wsu_web_crawler.queue_lock = false;
 	}
@@ -433,7 +434,7 @@ function handleCrawl( error, result, done ) {
  * @param {string} message
  */
 function handleCrawlLog( type, message ) {
-	if ( 'error' === type || 'critical' === type ) {
+	if ( "error" === type || "critical" === type ) {
 		util.log( "Error (Node Crawler): " + message );
 	}
 }
