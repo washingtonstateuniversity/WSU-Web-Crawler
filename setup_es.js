@@ -29,6 +29,15 @@ var createIndex = function() {
 						analytics: {
 							type: "keyword"
 						},
+						title: {
+							type: "text"
+						},
+						image: {
+							type: "text"
+						},
+						description: {
+							type: "text"
+						},
 						content: {
 							type: "text"
 						},

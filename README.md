@@ -33,6 +33,9 @@ The "url" type will have these mapped properties:
 * domain: keyword
 * identity: keyword
 * analytics: keyword
+* title: text
+* image: text
+* description: text
 * content: text
 * status_code: integer
 * redirect_url: keyword

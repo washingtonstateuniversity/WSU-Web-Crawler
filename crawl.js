@@ -155,6 +155,9 @@ function updateURLData( url, data ) {
 						analytics: data.global_analytics,
 						status_code: data.status_code,
 						redirect_url: data.redirect_url,
+						title: data.title,
+						image: data.image,
+						description: data.description,
 						content: data.content,
 						last_scan: d.getTime(),
 						anchors: data.anchors
@@ -186,6 +189,10 @@ function handleCrawlResult( res ) {
 			global_analytics: "unknown",
 			status_code: res.statusCode,
 			redirect_url: "",
+			title: "",
+			image: "",
+			description: "",
+			content: "",
 			anchors: []
 		};
 
@@ -288,17 +295,43 @@ function handleCrawlResult( res ) {
 				}
 			} );
 
+			var og_title = $( "meta[property='og:title']" );
+			var title = $( "title" );
+
+			if ( 0 !== og_title.length && 0 !== og_title.attr( "content" ).length ) {
+				url_update.title = og_title.attr( "content" );
+			} else if ( 0 !== title.length ) {
+				url_update.title = title.text();
+			}
+
+			var image = $( "meta[property='og:image']" );
+
+			if ( 0 !== image.length && 0 !== image.attr( "content" ).length ) {
+				url_update.image = image.attr( "content" );
+			}
+
+			var og_description = $( "meta[property='og:description']" );
+			var description = $( "meta[name='description']" );
+
+			if ( 0 !== og_description.length && 0 !== og_description.attr( "content" ).length ) {
+				url_update.description = og_description.attr( "content" );
+			} else if ( 0 !== description.length && 0 !== description.attr( "content" ).length ) {
+				url_update.description = description.attr( "content" );
+			}
+
 			// Store the main content as plain text for search purposes. If a <main> element
 			// does not exist, try a container with an ID of main. Fallback to the full body
 			// content if neither exist.
-			if ( 0 !== $( "main" ).length ) {
-				url_update.content = $( "main" ).text().replace( /\s+/g, " " ).trim();
-			} else if ( 0 !== $( "#main" ) ) {
-				url_update.content = $( "#main" ).text().replace( /\s+/g, " " ).trim();
-			} else if ( 0 !== $( "body" ).length ) {
-				url_update.content = $( "body" ).text().replace( /\s+/g, " " ).trim();
-			} else {
-				url_update.content = "";
+			var modern_main = $( "main" );
+			var id_main = $( "#main" );
+			var body_main = $( "body" );
+
+			if ( 0 !== modern_main.length ) {
+				url_update.content = modern_main.text().replace( /\s+/g, " " ).trim();
+			} else if ( 0 !== id_main.length ) {
+				url_update.content = id_main.text().replace( /\s+/g, " " ).trim();
+			} else if ( 0 !== body_main.length ) {
+				url_update.content = body_main.text().replace( /\s+/g, " " ).trim();
 			}
 		}
 
