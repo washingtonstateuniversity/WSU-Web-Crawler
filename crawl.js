@@ -322,12 +322,16 @@ function handleCrawlResult( res ) {
 			// Store the main content as plain text for search purposes. If a <main> element
 			// does not exist, try a container with an ID of main. Fallback to the full body
 			// content if neither exist.
-			if ( 0 !== $( "main" ).length ) {
-				url_update.content = $( "main" ).text().replace( /\s+/g, " " ).trim();
-			} else if ( 0 !== $( "#main" ) ) {
-				url_update.content = $( "#main" ).text().replace( /\s+/g, " " ).trim();
-			} else if ( 0 !== $( "body" ).length ) {
-				url_update.content = $( "body" ).text().replace( /\s+/g, " " ).trim();
+			var modern_main = $( "main" );
+			var id_main = $( "#main" );
+			var body_main = $( "body" );
+
+			if ( 0 !== modern_main.length ) {
+				url_update.content = modern_main.text().replace( /\s+/g, " " ).trim();
+			} else if ( 0 !== id_main.length ) {
+				url_update.content = id_main.text().replace( /\s+/g, " " ).trim();
+			} else if ( 0 !== body_main.length ) {
+				url_update.content = body_main.text().replace( /\s+/g, " " ).trim();
 			}
 		}
 
