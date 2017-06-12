@@ -1,5 +1,5 @@
 build:
-	rm wsu-web-crawler.tar
+	rm -f wsu-web-crawler.tar
 	rm -rf build-package
 	mkdir build-package
 	cp package*.json build-package/
