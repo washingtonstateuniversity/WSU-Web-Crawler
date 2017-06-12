@@ -7,11 +7,11 @@ var util = require( "util" );
 require( "dotenv" ).config();
 
 var wsu_web_crawler = {
-	scan_urls: [],     // Tracks the list of URLs to be scanned.
-	scanned_urls: [],  // Tracks the list of URLs scanned.
-	store_urls: [],    // Tracks the list of URLs to be stored.
-	stored_urls: 0,    // Tracks the number of URLs stored.
-	queue_lock: false  // Used to lock the crawler queue.
+	scan_urls: [],     // List of URLs to be scanned.
+	scanned_urls: [],  // List of URLs already scanned.
+	store_urls: [],    // List of URLs to be stored.
+	stored_urls: 0,    // Number of URLs stored.
+	queue_lock: false  // Whether the crawler queue is locked.
 };
 
 wsu_web_crawler.scan_urls = process.env.START_URLS.split( "," );
@@ -44,8 +44,9 @@ function elasticClient() {
 	} );
 }
 
-// Prefills a list of URLs to scan based on those already with an initial set of
-// data stored in Elasticsearch.
+/**
+ * Prefill a list of URLs to be scanned based on existing data in Elasticsearch.
+ */
 function prefillURLs() {
 	var elastic = elasticClient();
 
@@ -78,7 +79,12 @@ function prefillURLs() {
 	elastic = null;
 }
 
-// Stores a list of URLs in Elasticsearch with a bulk request.
+/**
+ * Store a bulk list of newly found URLs in Elasticsearch.
+ *
+ * @param {object} response
+ * @returns {Promise}
+ */
 function storeURLs( response ) {
 	return new Promise( function( resolve, reject ) {
 		var bulk_body = response.body;
@@ -98,7 +104,12 @@ function storeURLs( response ) {
 	} );
 }
 
-// Queues all waiting URLs for scan.
+/**
+ * Queue found URLs that have been marked to scan.
+ *
+ * The queue is limited to 100 URLs at a time. A basic locking mechanism is
+ * used to hold URLs for later addition to the queue.
+ */
 function scanURLs() {
 	if ( false === wsu_web_crawler.queue_lock ) {
 		var queue_urls = wsu_web_crawler.scan_urls.slice( 0, 101 );
@@ -115,10 +126,10 @@ function scanURLs() {
 }
 
 /**
- * Updates a URLs record with the results of a URL scan.
+ * Update a URL record with the results of a crawl.
  *
- * @param url {string}
- * @param data {object}
+ * @param {string} url
+ * @param {object} data
  */
 function updateURLData( url, data ) {
 	var elastic = elasticClient();
@@ -178,8 +189,13 @@ function updateURLData( url, data ) {
 	} );
 }
 
-// Parse a crawl result for anchor elements and determine if individual href
-// attributes should be marked to scan or to store based on existing data.
+/**
+ * Parse a crawl result and determine what information about the crawl
+ * should be stored for the URL in Elasticsearch.
+ *
+ * @param {object} res
+ * @returns {Promise}
+ */
 function handleCrawlResult( res ) {
 	return new Promise( function( resolve, reject ) {
 		var reject_message = "";
@@ -348,8 +364,12 @@ function handleCrawlResult( res ) {
 	} );
 }
 
-// Checks a list of URLs against those currently stored in Elasticsearch
-// so that storage of duplicate URLs is avoided.
+/**
+ * Check a bulk list of URLs against those already stored in Elasticsearch
+ * and generate the list of URLs that should be stored as new.
+ *
+ * @returns {Promise}
+ */
 function checkURLStore() {
 	return new Promise( function( resolve, reject ) {
 		var local_store_urls = wsu_web_crawler.store_urls;
@@ -414,8 +434,12 @@ function checkURLStore() {
 	} );
 }
 
-// Outputs a common set of data after individual crawls and, if needed,
-// queues up the next request.
+/**
+ * Handle the completion of individual crawls.
+ *
+ * This manages the creation of new crawler instances and then fires the
+ * standard URL queue.
+ */
 function finishResult() {
 	util.log( "Status: " + wsu_web_crawler.scanned_urls.length + " scanned, " + wsu_web_crawler.stored_urls + " stored, " + c.queueSize + " queued" );
 
