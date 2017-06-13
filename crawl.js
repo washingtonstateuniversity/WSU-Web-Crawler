@@ -9,6 +9,7 @@ require( "dotenv" ).config();
 var wsu_web_crawler = {
 	scan_urls: [],     // List of URLs to be scanned.
 	scanned_urls: [],  // List of URLs already scanned.
+	scanned_verify: 0, // Maintain a slow count of scanned URLS to avoid stalling.
 	store_urls: [],    // List of URLs to be stored.
 	stored_urls: 0,    // Number of URLs stored.
 	queue_lock: false  // Whether the crawler queue is locked.
@@ -456,6 +457,20 @@ function finishResult() {
 }
 
 /**
+ * Unlock a stalled queue if the scanned URLs count has not changed
+ * since the last run.
+ */
+function isCrawlStalled() {
+	if ( true === wsu_web_crawler.queue_lock && wsu_web_crawler.scanned_urls.length === wsu_web_crawler.scanned_verify ) {
+		util.log( "Error: Restoring stalled queue with " + c.queueSize + " remaining URLs" );
+		wsu_web_crawler.queue_lock = false;
+		scanURLs();
+	}
+
+	wsu_web_crawler.scanned_verify = wsu_web_crawler.scanned_urls.length;
+}
+
+/**
  * Handle crawl callbacks from node-crawler.
  *
  * @param {string} error
@@ -540,3 +555,6 @@ scanURLs();
 
 // Handle the bulk storage of found URLs in another thread.
 setTimeout( storeFoundURLs, 2000 );
+
+// Check crawl status every 10 seconds to determine if things have stalled.
+setTimeout( isCrawlStalled, 10000 );
