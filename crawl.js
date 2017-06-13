@@ -26,7 +26,7 @@ var parse_href = new ParseHref( {
 	flagged_domains: process.env.SKIP_DOMAINS.split( "," ),
 
 	// These file extensions are flagged to not be scanned.
-	flagged_extensions: [ "jpg", "jpeg", "gif", "png" ]
+	flagged_extensions: [ "jpg", "jpeg", "gif", "png", "exe", "zip" ]
 } );
 
 /**
@@ -245,8 +245,6 @@ function handleCrawlResult( res ) {
 			url_update.status_code = 902;
 		} else if ( "ppt" === file_extension || "pptx" === file_extension || "pptm" === file_extension ) {
 			url_update.status_code = 903;
-		} else if ( "zip" === file_extension ) {
-			url_update.status_code = 904;
 		} else if ( /http-equiv="refresh"/i.test( res.body ) ) {
 			url_update.status_code = 301;
 
