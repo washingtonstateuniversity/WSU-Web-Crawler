@@ -9,6 +9,7 @@ require( "dotenv" ).config();
 var wsu_web_crawler = {
 	scan_urls: [],     // List of URLs to be scanned.
 	scanned_urls: [],  // List of URLs already scanned.
+	scanned_verify: 0, // Maintain a slow count of scanned URLS to avoid stalling.
 	store_urls: [],    // List of URLs to be stored.
 	stored_urls: 0,    // Number of URLs stored.
 	queue_lock: false  // Whether the crawler queue is locked.
@@ -26,7 +27,7 @@ var parse_href = new ParseHref( {
 	flagged_domains: process.env.SKIP_DOMAINS.split( "," ),
 
 	// These file extensions are flagged to not be scanned.
-	flagged_extensions: [ "jpg", "jpeg", "gif", "png" ]
+	flagged_extensions: [ "jpg", "jpeg", "gif", "png", "exe", "zip" ]
 } );
 
 /**
@@ -116,6 +117,7 @@ function scanURLs() {
 		wsu_web_crawler.scan_urls = wsu_web_crawler.scan_urls.slice( 101 );
 
 		util.log( "Queue: Add " + queue_urls.length + " URLs to queue of " + c.queueSize + " from backlog of " + wsu_web_crawler.scan_urls.length );
+		c.options.start_queue_size = c.options.start_queue_size + queue_urls.length;
 		c.queue( queue_urls );
 	}
 
@@ -245,8 +247,6 @@ function handleCrawlResult( res ) {
 			url_update.status_code = 902;
 		} else if ( "ppt" === file_extension || "pptx" === file_extension || "pptm" === file_extension ) {
 			url_update.status_code = 903;
-		} else if ( "zip" === file_extension ) {
-			url_update.status_code = 904;
 		} else if ( /http-equiv="refresh"/i.test( res.body ) ) {
 			url_update.status_code = 301;
 
@@ -441,13 +441,19 @@ function checkURLStore() {
  * standard URL queue.
  */
 function finishResult() {
-	util.log( "Status: " + wsu_web_crawler.scanned_urls.length + " scanned, " + wsu_web_crawler.stored_urls + " stored, " + c.queueSize + " queued" );
+	util.log( "Status: " + wsu_web_crawler.scanned_urls.length + " scanned, " + wsu_web_crawler.stored_urls + " stored, " + wsu_web_crawler.scan_urls.length + " backlog, " + c.queueSize + " | " + c.options.start_queue_size + " queued" );
+
+	// It's possible that scan_urls is empty and needs to be refilled.
+	if ( 0 === wsu_web_crawler.scan_urls.length ) {
+		prefillURLs();
+	}
 
 	// If the queue is locked and the queue size is 0, reset the crawler.
-	if ( true === wsu_web_crawler.queue_lock && 0 < wsu_web_crawler.scan_urls.length && 0 === c.queueSize ) {
+	if ( true === wsu_web_crawler.queue_lock && 0 < wsu_web_crawler.scan_urls.length && ( 0 === c.queueSize || 0 === c.options.start_queue_size ) ) {
 		util.log( "Queue: Reset queue object" );
 		c = "";
 		c = getCrawler();
+		c.options.start_queue_size = 0;
 		wsu_web_crawler.queue_lock = false;
 	}
 
@@ -458,6 +464,20 @@ function finishResult() {
 }
 
 /**
+ * Unlock a stalled queue if the scanned URLs count has not changed
+ * since the last run.
+ */
+function isCrawlStalled() {
+	if ( true === wsu_web_crawler.queue_lock && wsu_web_crawler.scanned_urls.length === wsu_web_crawler.scanned_verify ) {
+		util.log( "Error: Restoring stalled queue with " + c.queueSize + " remaining URLs" );
+		wsu_web_crawler.queue_lock = false;
+		scanURLs();
+	}
+
+	wsu_web_crawler.scanned_verify = wsu_web_crawler.scanned_urls.length;
+}
+
+/**
  * Handle crawl callbacks from node-crawler.
  *
  * @param {string} error
@@ -465,6 +485,8 @@ function finishResult() {
  * @param {method} done
  */
 function handleCrawl( error, result, done ) {
+	c.options.start_queue_size--;
+
 	if ( error ) {
 		finishResult();
 	} else {
@@ -514,7 +536,8 @@ function getCrawler() {
 		callback: handleCrawl,
 		logger: {
 			log: handleCrawlLog
-		}
+		},
+		start_queue_size: 0
 	} );
 }
 
@@ -542,3 +565,6 @@ scanURLs();
 
 // Handle the bulk storage of found URLs in another thread.
 setTimeout( storeFoundURLs, 2000 );
+
+// Check crawl status every 10 seconds to determine if things have stalled.
+setTimeout( isCrawlStalled, 10000 );
