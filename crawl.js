@@ -537,7 +537,7 @@ function getCrawler() {
 		logger: {
 			log: handleCrawlLog
 		},
-		start_queue_size: 0,
+		start_queue_size: 0
 	} );
 }
 
