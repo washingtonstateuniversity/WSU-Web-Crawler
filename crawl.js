@@ -443,6 +443,11 @@ function checkURLStore() {
 function finishResult() {
 	util.log( "Status: " + wsu_web_crawler.scanned_urls.length + " scanned, " + wsu_web_crawler.stored_urls + " stored, " + wsu_web_crawler.scan_urls.length + " backlog, " + c.queueSize + " | " + c.options.start_queue_size + " queued" );
 
+	// It's possible that scan_urls is empty and needs to be refilled.
+	if ( 0 === wsu_web_crawler.scan_urls.length ) {
+		prefillURLs();
+	}
+
 	// If the queue is locked and the queue size is 0, reset the crawler.
 	if ( true === wsu_web_crawler.queue_lock && 0 < wsu_web_crawler.scan_urls.length && ( 0 === c.queueSize || 0 === c.options.start_queue_size ) ) {
 		util.log( "Queue: Reset queue object" );
