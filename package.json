@@ -19,13 +19,13 @@
   "dependencies": {
     "crawler": "^1.0.5",
     "dotenv": "^4.0.0",
-    "elasticsearch": "^13.1.0",
+    "elasticsearch": "^13.2.0",
     "url": "^0.11.0"
   },
   "devDependencies": {
     "grunt": "^1.0.1",
     "grunt-contrib-jshint": "^1.1.0",
     "grunt-jscs": "^3.0.1",
-    "tape": "^4.6.3"
+    "tape": "^4.7.0"
   }
 }
