@@ -48,6 +48,8 @@ The "url" type will have these mapped properties:
 * last_https_scan: date, epoch_millis
 * force_https_scan: integer
 
+An array of "anchors" found in the scan of a URL is also stored. Because Elasticsearch does not have a defined "array" type and we are not searching for this data, it is left out of the defined schema.
+
 This library uses several of these properties and provides a structure that can be used in the future by other libraries.
 
 ### Status Code
