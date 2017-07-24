@@ -42,15 +42,26 @@ The "url" type will have these mapped properties:
 * status_code: integer
 * redirect_url: keyword
 * last_a11y_scan: date, epoch_millis
-* force_a11y_scan: integer
+* a11y_scan_priority: integer
 * last_search_scan: date, epoch_millis
-* force_search_scan: integer
+* search_scan_priority: integer
 * last_https_scan: date, epoch_millis
-* force_https_scan: integer
+* https_scan_priority: integer
+* last_anchor_scan: date, epoch_millis
+* anchor_scan_priority: integer
 
 An array of "anchors" found in the scan of a URL is also stored. Because Elasticsearch does not have a defined "array" type and we are not searching for this data, it is left out of the defined schema.
 
 This library uses several of these properties and provides a structure that can be used in the future by other libraries.
+
+### Scan priorities
+
+Scan priority fields are used to set priority outside of the normal date based process and to lock records that are currently being scanned.
+
+* If a scan priority field is set to 0, it is locked.
+* `a11y_scan_priority` is set to *50* after a data collector scan. The accessibility collector uses this data.
+* `anchor_scan_priority` is set to `50` after a data collector scan. The URL collector uses this data.
+* `search_scan_priority` is set to `null` by the search data collector, indicating that the content is fresh.
 
 ### Status Code
 

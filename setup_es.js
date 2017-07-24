@@ -51,26 +51,29 @@ var createIndex = function() {
 							type: "date",
 							format: "epoch_millis"
 						},
-						force_a11y_scan: {
+						a11y_scan_priority: {
 							type: "integer"
 						},
 						last_search_scan: {
 							type: "date",
 							format: "epoch_millis"
 						},
-						force_search_scan: {
+						search_scan_priority: {
 							type: "integer"
 						},
 						last_https_scan: {
 							type: "date",
 							format: "epoch_millis"
 						},
-						force_https_scan: {
+						https_scan_priority: {
 							type: "integer"
 						},
-						last_scan: {
+						last_anchor_scan: {
 							type: "date",
 							format: "epoch_millis"
+						},
+						anchor_scan_priority: {
+							type: "integer"
 						}
 					}
 				}

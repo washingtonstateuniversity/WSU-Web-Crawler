@@ -172,7 +172,10 @@ function updateURLData( url, data ) {
 						image: data.image,
 						description: data.description,
 						content: data.content,
-						last_scan: d.getTime(),
+						last_search_scan: d.getTime(),
+						search_scan_priority: null,
+						a11y_scan_priority: 50,
+						anchor_scan_priority: 50,
 						anchors: data.anchors
 					}
 				}
