@@ -468,13 +468,16 @@ function finishResult() {
  * since the last run.
  */
 function isCrawlStalled() {
-	if ( true === wsu_web_crawler.queue_lock && wsu_web_crawler.scanned_urls.length === wsu_web_crawler.scanned_verify ) {
+	if ( wsu_web_crawler.scanned_urls.length === wsu_web_crawler.scanned_verify ) {
 		util.log( "Error: Restoring stalled queue with " + c.queueSize + " remaining URLs" );
 		wsu_web_crawler.queue_lock = false;
 		scanURLs();
+	} else {
+		util.log( "Queue is not stalled" );
 	}
 
 	wsu_web_crawler.scanned_verify = wsu_web_crawler.scanned_urls.length;
+	setTimeout( isCrawlStalled, 60000 );
 }
 
 /**
@@ -566,5 +569,5 @@ scanURLs();
 // Handle the bulk storage of found URLs in another thread.
 setTimeout( storeFoundURLs, 2000 );
 
-// Check crawl status every 10 seconds to determine if things have stalled.
-setTimeout( isCrawlStalled, 10000 );
+// Check crawl status every minute to determine if things have stalled.
+setTimeout( isCrawlStalled, 60000 );
