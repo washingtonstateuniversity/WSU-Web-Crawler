@@ -173,11 +173,11 @@ function lockURL() {
 }
 
 /**
- * Retrieve the next locked URL for the data crawler.
+ * Queue the next locked URL for the data crawler.
  *
  * @returns {*}
  */
-function getLockedURL() {
+function queueLockedURL() {
 	var elastic = getElasticClient();
 
 	return elastic.search( {
@@ -194,6 +194,7 @@ function getLockedURL() {
 	} ).then( function( response ) {
 		if ( 1 === response.hits.hits.length ) {
 			wsu_web_crawler.url_queue[ response.hits.hits[ 0 ]._source.url ] = response.hits.hits[ 0 ]._id;
+			c.queue( response.hits.hits[ 0 ]._source.url );
 
 			return true;
 		}
