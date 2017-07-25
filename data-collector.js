@@ -207,41 +207,6 @@ function queueLockedURL() {
 }
 
 /**
- * Prefill a list of URLs to be scanned based on existing data in Elasticsearch.
- */
-function prefillURLs() {
-	var elastic = elasticClient();
-
-	elastic.search( {
-		index: process.env.ES_URL_INDEX,
-		type: "url",
-		body: {
-			size: 100,
-			query: {
-				bool: {
-					must_not: [
-						{
-							exists: {
-								field: "status_code"
-							}
-						}
-					]
-				}
-			}
-		}
-	} ).then( function( response ) {
-		for ( var j = 0, y = response.hits.hits.length; j < y; j++ ) {
-			wsu_web_crawler.scan_urls.push( response.hits.hits[ j ]._source.url );
-		}
-		util.log( "Prefill: " + wsu_web_crawler.scan_urls.length + " URLs to scan" );
-	} ).catch( function( error ) {
-		util.log( "Error (prefillURLs): " + error );
-	} );
-
-	elastic = null;
-}
-
-/**
  * Store a bulk list of newly found URLs in Elasticsearch.
  *
  * @param {object} response
