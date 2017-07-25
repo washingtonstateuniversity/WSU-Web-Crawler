@@ -6,7 +6,9 @@ var util = require( "util" );
 
 require( "dotenv" ).config();
 
-var data_collector = {};
+var data_collector = {
+	lock_key: 0
+};
 
 var wsu_web_crawler = {
 	scan_urls: [],     // List of URLs to be scanned.
@@ -16,6 +18,8 @@ var wsu_web_crawler = {
 	stored_urls: 0,    // Number of URLs stored.
 	queue_lock: false  // Whether the crawler queue is locked.
 };
+
+data_collector.lock_key = process.env.LOCK_KEY;
 
 wsu_web_crawler.scan_urls = process.env.START_URLS.split( "," );
 wsu_web_crawler.store_urls = process.env.START_URLS.split( "," );
@@ -50,14 +54,13 @@ function elasticClient() {
 function getElasticClient() {
 	if ( null === data_collector.es || "undefined" === typeof data_collector.es ) {
 		data_collector.es = elasticClient();
-		util.log( "regenerated ES client" );
 	}
 
 	return data_collector.es;
 }
 
 /**
- * Retrieve the next URL to be scanned with the data collector.
+ * Lock the next URL to be scanned with the data collector.
  *
  * Looks for URLs in this order:
  *
@@ -67,11 +70,11 @@ function getElasticClient() {
  *
  * @returns {*}
  */
-function getNextURL() {
+function lockURL() {
 	var elastic = getElasticClient();
 
 	// Look for any URLs that have been prioritized.
-	return elastic.search( {
+	return elastic.updateByQuery( {
 		index: process.env.ES_URL_INDEX,
 		type: "url",
 		body: {
@@ -89,14 +92,17 @@ function getNextURL() {
 						order: "asc"
 					}
 				}
-			]
+			],
+			script: {
+				inline: "ctx._source.search_scan_priority = " + data_collector.lock_key
+			}
 		}
 	} ).then( function( response ) {
-		if ( 1 === response.hits.hits.length ) {
-			throw response.hits.hits[0]._source.url;
+		if ( 1 === response.updated ) {
+			throw response.updated;
 		}
 
-		return elastic.search( {
+		return elastic.updateByQuery( {
 			index: process.env.ES_URL_INDEX,
 			type: "url",
 			body: {
@@ -108,14 +114,17 @@ function getNextURL() {
 							{ exists: { field: "search_scan_priority" } }
 						]
 					}
+				},
+				script: {
+					inline: "ctx._source.search_scan_priority = " + data_collector.lock_key
 				}
 			}
 		} ).then( function( response ) {
-			if ( 1 === response.hits.hits.length ) {
-				throw response.hits.hits[ 0 ]._source.url;
+			if ( 1 === response.updated ) {
+				throw response.updated;
 			}
 
-			return elastic.search( {
+			return elastic.updateByQuery( {
 				index: process.env.ES_URL_INDEX,
 				type: "url",
 				body: {
