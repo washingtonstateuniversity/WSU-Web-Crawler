@@ -6,11 +6,9 @@ var util = require( "util" );
 
 require( "dotenv" ).config();
 
-var data_collector = {
-	lock_key: 0
-};
-
 var wsu_web_crawler = {
+	lock_key: 0,
+	url_queue: {},
 	scan_urls: [],     // List of URLs to be scanned.
 	scanned_urls: [],  // List of URLs already scanned.
 	scanned_verify: 0, // Maintain a slow count of scanned URLS to avoid stalling.
@@ -19,7 +17,7 @@ var wsu_web_crawler = {
 	queue_lock: false  // Whether the crawler queue is locked.
 };
 
-data_collector.lock_key = process.env.LOCK_KEY;
+wsu_web_crawler.lock_key = process.env.LOCK_KEY;
 
 wsu_web_crawler.scan_urls = process.env.START_URLS.split( "," );
 wsu_web_crawler.store_urls = process.env.START_URLS.split( "," );
@@ -52,11 +50,11 @@ function elasticClient() {
 }
 
 function getElasticClient() {
-	if ( null === data_collector.es || "undefined" === typeof data_collector.es ) {
-		data_collector.es = elasticClient();
+	if ( null === wsu_web_crawler.es || "undefined" === typeof wsu_web_crawler.es ) {
+		wsu_web_crawler.es = elasticClient();
 	}
 
-	return data_collector.es;
+	return wsu_web_crawler.es;
 }
 
 /**
@@ -94,7 +92,7 @@ function lockURL() {
 				}
 			],
 			script: {
-				inline: "ctx._source.search_scan_priority = " + data_collector.lock_key
+				inline: "ctx._source.search_scan_priority = " + wsu_web_crawler.lock_key
 			}
 		}
 	} ).then( function( response ) {
@@ -116,7 +114,7 @@ function lockURL() {
 					}
 				},
 				script: {
-					inline: "ctx._source.search_scan_priority = " + data_collector.lock_key
+					inline: "ctx._source.search_scan_priority = " + wsu_web_crawler.lock_key
 				}
 			}
 		} ).then( function( response ) {
@@ -154,7 +152,7 @@ function lockURL() {
 						}
 					],
 					script: {
-						inline: "ctx._source.search_scan_priority = " + data_collector.lock_key
+						inline: "ctx._source.search_scan_priority = " + wsu_web_crawler.lock_key
 					}
 				}
 			} ).then( function( response ) {
@@ -189,13 +187,15 @@ function getLockedURL() {
 			size: 1,
 			query: {
 				match: {
-					"search_scan_priority": data_collector.lock_key
+					"search_scan_priority": wsu_web_crawler.lock_key
 				}
 			}
 		}
 	} ).then( function( response ) {
 		if ( 1 === response.hits.hits.length ) {
-			return { "url": response.hits.hits[ 0 ]._source.url, "id": response.hits.hits[ 0 ]._id };
+			wsu_web_crawler.url_queue[ response.hits.hits[ 0 ]._source.url ] = response.hits.hits[ 0 ]._id;
+
+			return true;
 		}
 
 		throw 0;
@@ -722,9 +722,6 @@ function storeFoundURLs() {
 }
 
 var c = getCrawler();
-
-// Prefill URLs to scan from those stored in the index.
-prefillURLs();
 
 // Start scanning URLs.
 scanURLs();
