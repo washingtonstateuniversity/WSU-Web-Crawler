@@ -617,3 +617,5 @@ var c = getCrawler();
 
 // Handle the bulk storage of found URLs in another thread.
 setTimeout( storeFoundURLs, 2000 );
+setInterval( lockURL, 1000 );
+setInterval( queueLockedURL, 1000 );
