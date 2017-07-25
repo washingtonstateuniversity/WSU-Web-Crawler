@@ -152,20 +152,56 @@ function lockURL() {
 								order: "asc"
 							}
 						}
-					]
+					],
+					script: {
+						inline: "ctx._source.search_scan_priority = " + data_collector.lock_key
+					}
 				}
 			} ).then( function( response ) {
-				if ( 1 === response.hits.hits.length ) {
-					throw response.hits.hits[ 0 ]._source.url;
+				if ( 1 === response.updated ) {
+					throw response.updated;
 				}
 
-				return "";
+				return 0;
 			} );
 		} );
 	} ).then( function( response ) {
+		util.log( "NO " + response );
 		throw response;
 	} ).catch( function( response ) {
+		util.log( "YES " + response );
 		return response;
+	} );
+}
+
+/**
+ * Retrieve the next locked URL for the data crawler.
+ *
+ * @returns {*}
+ */
+function getLockedURL() {
+	var elastic = getElasticClient();
+
+	return elastic.search( {
+		index: process.env.ES_URL_INDEX,
+		type: "url",
+		body: {
+			size: 1,
+			query: {
+				match: {
+					"search_scan_priority": data_collector.lock_key
+				}
+			}
+		}
+	} ).then( function( response ) {
+		if ( 1 === response.hits.hits.length ) {
+			return { "url": response.hits.hits[ 0 ]._source.url, "id": response.hits.hits[ 0 ]._id };
+		}
+
+		throw 0;
+	} ).catch( function( error ) {
+		util.log( "Error: " + error );
+		throw 0;
 	} );
 }
 
