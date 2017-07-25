@@ -6,6 +6,8 @@ var util = require( "util" );
 
 require( "dotenv" ).config();
 
+var data_collector = {};
+
 var wsu_web_crawler = {
 	scan_urls: [],     // List of URLs to be scanned.
 	scanned_urls: [],  // List of URLs already scanned.
@@ -42,6 +44,119 @@ function elasticClient() {
 	return new es.Client( {
 		host: process.env.ES_HOST,
 		log: "error"
+	} );
+}
+
+function getElasticClient() {
+	if ( null === data_collector.es || "undefined" === typeof data_collector.es ) {
+		data_collector.es = elasticClient();
+		util.log( "regenerated ES client" );
+	}
+
+	return data_collector.es;
+}
+
+/**
+ * Retrieve the next URL to be scanned with the data collector.
+ *
+ * Looks for URLs in this order:
+ *
+ * - Flagged with a priority higher than 0.
+ * - Has never been scanned.
+ * - Least recently scanned.
+ *
+ * @returns {*}
+ */
+function getNextURL() {
+	var elastic = getElasticClient();
+
+	// Look for any URLs that have been prioritized.
+	return elastic.search( {
+		index: process.env.ES_URL_INDEX,
+		type: "url",
+		body: {
+			size: 1,
+			query: {
+				range: {
+					search_scan_priority: {
+						gte: 1
+					}
+				}
+			},
+			sort: [
+				{
+					search_scan_priority: {
+						order: "asc"
+					}
+				}
+			]
+		}
+	} ).then( function( response ) {
+		if ( 1 === response.hits.hits.length ) {
+			throw response.hits.hits[0]._source.url;
+		}
+
+		return elastic.search( {
+			index: process.env.ES_URL_INDEX,
+			type: "url",
+			body: {
+				size: 1,
+				query: {
+					bool: {
+						must_not: [
+							{ exists: { field: "last_search_scan" } },
+							{ exists: { field: "search_scan_priority" } }
+						]
+					}
+				}
+			}
+		} ).then( function( response ) {
+			if ( 1 === response.hits.hits.length ) {
+				throw response.hits.hits[ 0 ]._source.url;
+			}
+
+			return elastic.search( {
+				index: process.env.ES_URL_INDEX,
+				type: "url",
+				body: {
+					size: 1,
+					query: {
+						bool: {
+							must_not: [
+								{ exists: { field: "search_scan_priority" } }
+							],
+							must: [
+								{ exists: { field: "last_search_scan" } },
+								{
+									range: {
+										last_search_scan: {
+											"lte": "now-1d/d"
+										}
+									}
+								}
+							]
+						}
+					},
+					sort: [
+						{
+							last_search_scan: {
+								order: "asc"
+							}
+						}
+					]
+				}
+			} ).then( function( response ) {
+				if ( 1 === response.hits.hits.length ) {
+					throw response.hits.hits[ 0 ]._source.url;
+				}
+
+				return "";
+			} );
+		} );
+	} ).then( function( response ) {
+		throw response;
+	} ).catch( function( response ) {
+		return response;
 	} );
 }
 
