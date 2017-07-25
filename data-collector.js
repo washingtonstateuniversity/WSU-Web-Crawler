@@ -76,7 +76,8 @@ function lockURL() {
 			query: {
 				range: {
 					search_scan_priority: {
-						gte: 1
+						gte: 1,
+						lte: 999
 					}
 				}
 			},
