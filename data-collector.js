@@ -9,8 +9,6 @@ require( "dotenv" ).config();
 var wsu_web_crawler = {
 	lock_key: 0,
 	url_queue: {},
-	scan_urls: [],     // List of URLs to be scanned.
-	scanned_urls: [],  // List of URLs already scanned.
 	scanned_verify: 0, // Maintain a slow count of scanned URLS to avoid stalling.
 	store_urls: [],    // List of URLs to be stored.
 	stored_urls: 0,    // Number of URLs stored.
@@ -18,9 +16,7 @@ var wsu_web_crawler = {
 };
 
 wsu_web_crawler.lock_key = process.env.LOCK_KEY;
-
 wsu_web_crawler.scan_urls = process.env.START_URLS.split( "," );
-wsu_web_crawler.store_urls = process.env.START_URLS.split( "," );
 
 var parse_href = new ParseHref( {
 
@@ -285,15 +281,16 @@ function updateURLData( url, data ) {
 				}
 			} )
 			.then( function() {
-				wsu_web_crawler.scanned_urls.push( url );
+				wsu_web_crawler.scanned_verify++;
 				util.log( "Updated: " + url );
 			} )
 			.catch( function( error ) {
-				wsu_web_crawler.scan_urls.push( url );
+				// @todo what do do with a failed scan?
 				util.log( "Error (updateURLData 2): " + url + " " + error.message );
 			} );
 		}
 	} ).catch( function( error ) {
+		// @todo what do do with a failed scan?
 		util.log( "Error (updateURLData 1): " + error.message );
 	} );
 }
@@ -330,12 +327,7 @@ function handleCrawlResult( res ) {
 			if ( "undefined" !== typeof res.headers.location ) {
 				var url = parse_href.get_url( res.headers.location, res.options.uri );
 
-				// Mark un-scanned URLS to be scanned.
-				if ( url && url !== res.options.uri && -1 >= wsu_web_crawler.scanned_urls.indexOf( url ) && -1 >= wsu_web_crawler.scan_urls.indexOf( url ) ) {
-					wsu_web_crawler.scan_urls.push( url );
-				}
-
-				// Mark un-stored URLs to be stored.
+				// Mark found URLs to be stored.
 				if ( url && -1 >= wsu_web_crawler.store_urls.indexOf( url ) ) {
 					wsu_web_crawler.store_urls.push( url );
 				}
@@ -398,12 +390,6 @@ function handleCrawlResult( res ) {
 
 					if ( false === url ) {
 						return;
-					}
-
-					// If a URL has not been scanned and is not slated to be scanned,
-					// mark it to be scanned.
-					if ( url !== res.options.uri && -1 >= wsu_web_crawler.scanned_urls.indexOf( url ) && -1 >= wsu_web_crawler.scan_urls.indexOf( url ) ) {
-						wsu_web_crawler.scan_urls.push( url );
 					}
 
 					// If a URL is not slated to be stored, mark it to be stored.
@@ -542,32 +528,10 @@ function checkURLStore() {
 }
 
 /**
- * Handle the completion of individual crawls.
- *
- * This manages the creation of new crawler instances and then fires the
- * standard URL queue.
+ * Log the completion of individual queues.
  */
 function finishResult() {
-	util.log( "Status: " + wsu_web_crawler.scanned_urls.length + " scanned, " + wsu_web_crawler.stored_urls + " stored, " + wsu_web_crawler.scan_urls.length + " backlog, " + c.queueSize + " | " + c.options.start_queue_size + " queued" );
-
-	// It's possible that scan_urls is empty and needs to be refilled.
-	if ( 0 === wsu_web_crawler.scan_urls.length ) {
-		prefillURLs();
-	}
-
-	// If the queue is locked and the queue size is 0, reset the crawler.
-	if ( true === wsu_web_crawler.queue_lock && 0 < wsu_web_crawler.scan_urls.length && ( 0 === c.queueSize || 0 === c.options.start_queue_size ) ) {
-		util.log( "Queue: Reset queue object" );
-		c = "";
-		c = getCrawler();
-		c.options.start_queue_size = 0;
-		wsu_web_crawler.queue_lock = false;
-	}
-
-	// If the queue is not locked, continue scanning.
-	if ( false === wsu_web_crawler.queue_lock ) {
-		scanURLs();
-	}
+	util.log( "Status: " + wsu_web_crawler.scanned_verify + " scanned, " + wsu_web_crawler.stored_urls + " stored, " + wsu_web_crawler.store_urls.length + " to store" );
 }
 
 /**
