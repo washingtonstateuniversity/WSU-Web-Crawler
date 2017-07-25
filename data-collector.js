@@ -232,28 +232,6 @@ function storeURLs( response ) {
 }
 
 /**
- * Queue found URLs that have been marked to scan.
- *
- * The queue is limited to 100 URLs at a time. A basic locking mechanism is
- * used to hold URLs for later addition to the queue.
- */
-function scanURLs() {
-	if ( false === wsu_web_crawler.queue_lock ) {
-		var queue_urls = wsu_web_crawler.scan_urls.slice( 0, 101 );
-		wsu_web_crawler.scan_urls = wsu_web_crawler.scan_urls.slice( 101 );
-
-		util.log( "Queue: Add " + queue_urls.length + " URLs to queue of " + c.queueSize + " from backlog of " + wsu_web_crawler.scan_urls.length );
-		c.options.start_queue_size = c.options.start_queue_size + queue_urls.length;
-		c.queue( queue_urls );
-	}
-
-	if ( false === wsu_web_crawler.queue_lock && 100 < c.queueSize ) {
-		util.log( "Queue: Temporarily lock crawler queue" );
-		wsu_web_crawler.queue_lock = true;
-	}
-}
-
-/**
  * Update a URL record with the results of a crawl.
  *
  * @param {string} url
@@ -688,9 +666,6 @@ function storeFoundURLs() {
 }
 
 var c = getCrawler();
-
-// Start scanning URLs.
-scanURLs();
 
 // Handle the bulk storage of found URLs in another thread.
 setTimeout( storeFoundURLs, 2000 );
