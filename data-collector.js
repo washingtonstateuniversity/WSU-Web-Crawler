@@ -8,7 +8,7 @@ require( "dotenv" ).config();
 
 var wsu_web_crawler = {
 	lock_key: 0,
-	url_queue: {},
+	url_queue: {},     // Maintain a list of URLs in queue.
 	store_urls: [],    // List of URLs to be stored.
 	scanned_verify: 0, // Number of URLs scanned.
 	stored_urls: 0,    // Number of URLs stored.
@@ -193,11 +193,19 @@ function queueLockedURLs() {
 	} ).then( function( response ) {
 		for ( var j = 0, y = response.hits.hits.length; j < y; j++ ) {
 			if ( response.hits.hits[ j ]._source.url in wsu_web_crawler.url_queue ) {
+				wsu_web_crawler.url_queue[ response.hits.hits[ j ]._source.url ].count++;
+
+				if ( 30 <= wsu_web_crawler.url_queue[ response.hits.hits[ j ]._source.url ].count ) {
+					markURLUnresponsive( response.hits.hits[ j ]._source.url );
+				}
 				util.log( "URL already queued" );
 				continue;
 			}
 
-			wsu_web_crawler.url_queue[ response.hits.hits[ j ]._source.url ] = response.hits.hits[ j ]._id;
+			wsu_web_crawler.url_queue[ response.hits.hits[ j ]._source.url ] = {
+				id: response.hits.hits[ j ]._id,
+				count: 1
+			};
 			c.queue( response.hits.hits[ j ]._source.url );
 		}
 
@@ -211,6 +219,44 @@ function queueLockedURLs() {
 	} ).catch( function( error ) {
 		util.log( "Error: " + error );
 		throw 0;
+	} );
+}
+
+function markURLUnresponsive( url ) {
+	if ( "undefined" === typeof wsu_web_crawler.url_queue[ url ] ) {
+		util.log( "Error updating "  + url + ", ID " + wsu_web_crawler.url_queue[ url ].id );
+		return;
+	}
+
+	var elastic = elasticClient();
+	var d = new Date();
+
+	elastic.update( {
+		index: process.env.ES_URL_INDEX,
+		type: "url",
+		id: wsu_web_crawler.url_queue[ url ].id,
+		body: {
+			doc: {
+				identity: "unknown",
+				analytics: "unknown",
+				status_code: 800,
+				redirect_url: null,
+				last_search_scan: d.getTime(),
+				search_scan_priority: null,
+				a11y_scan_priority: null,
+				anchor_scan_priority: null
+			}
+		}
+	} )
+	.then( function() {
+		wsu_web_crawler.scanned_verify++;
+		delete wsu_web_crawler.url_queue[ url ];
+		util.log( "URL marked unresponsive: " + url );
+	} )
+	.catch( function( error ) {
+
+		// @todo what do do with a failed scan?
+		util.log( "Error (updateURLData 2): " + url + " " + error.message );
 	} );
 }
 
@@ -247,7 +293,7 @@ function storeURLs( response ) {
  */
 function updateURLData( url, data ) {
 	if ( "undefined" === typeof wsu_web_crawler.url_queue[ url ] ) {
-		util.log( "Error updating "  + url + ", ID " + wsu_web_crawler.url_queue[ url ] );
+		util.log( "Error updating "  + url + ", ID " + wsu_web_crawler.url_queue[ url ].id );
 		return;
 	}
 
@@ -257,7 +303,7 @@ function updateURLData( url, data ) {
 	elastic.update( {
 		index: process.env.ES_URL_INDEX,
 		type: "url",
-		id: wsu_web_crawler.url_queue[ url ],
+		id: wsu_web_crawler.url_queue[ url ].id,
 		body: {
 			doc: {
 				identity: data.identity_version,
@@ -278,6 +324,7 @@ function updateURLData( url, data ) {
 	} )
 	.then( function() {
 		wsu_web_crawler.scanned_verify++;
+		delete wsu_web_crawler.url_queue[ url ];
 		util.log( "Updated: " + url );
 	} )
 	.catch( function( error ) {
