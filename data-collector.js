@@ -192,6 +192,11 @@ function queueLockedURLs() {
 		}
 	} ).then( function( response ) {
 		for ( var j = 0, y = response.hits.hits.length; j < y; j++ ) {
+			if ( response.hits.hits[ j ]._source.url in wsu_web_crawler.url_queue ) {
+				util.log( "URL already queued" );
+				continue;
+			}
+
 			wsu_web_crawler.url_queue[ response.hits.hits[ j ]._source.url ] = response.hits.hits[ j ]._id;
 			c.queue( response.hits.hits[ j ]._source.url );
 		}
