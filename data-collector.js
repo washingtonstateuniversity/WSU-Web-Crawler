@@ -9,9 +9,10 @@ require( "dotenv" ).config();
 var wsu_web_crawler = {
 	lock_key: 0,
 	url_queue: {},
-	scanned_verify: 0, // Maintain a slow count of scanned URLS to avoid stalling.
 	store_urls: [],    // List of URLs to be stored.
+	scanned_verify: 0, // Number of URLs scanned.
 	stored_urls: 0,    // Number of URLs stored.
+	locked_urls: 0,    // Total number of URLs locked by this crawler instance.
 	queue_lock: false  // Whether the crawler queue is locked.
 };
 
@@ -94,6 +95,7 @@ function lockURL() {
 		}
 	} ).then( function( response ) {
 		if ( 1 === response.updated ) {
+			wsu_web_crawler.locked_urls++;
 			throw response.updated;
 		}
 
@@ -116,6 +118,7 @@ function lockURL() {
 			}
 		} ).then( function( response ) {
 			if ( 1 === response.updated ) {
+				wsu_web_crawler.locked_urls++;
 				throw response.updated;
 			}
 
@@ -154,6 +157,7 @@ function lockURL() {
 				}
 			} ).then( function( response ) {
 				if ( 1 === response.updated ) {
+					wsu_web_crawler.locked_urls++;
 					throw response.updated;
 				}
 
@@ -161,27 +165,25 @@ function lockURL() {
 			} );
 		} );
 	} ).then( function( response ) {
-		util.log( "NO " + response );
 		throw response;
 	} ).catch( function( response ) {
-		util.log( "YES " + response );
 		return response;
 	} );
 }
 
 /**
- * Queue the next locked URL for the data crawler.
+ * Queue any locked URLs for crawl.
  *
  * @returns {*}
  */
-function queueLockedURL() {
+function queueLockedURLs() {
 	var elastic = getElasticClient();
 
 	return elastic.search( {
 		index: process.env.ES_URL_INDEX,
 		type: "url",
 		body: {
-			size: 1,
+			size: 10,
 			query: {
 				match: {
 					"search_scan_priority": wsu_web_crawler.lock_key
@@ -189,13 +191,17 @@ function queueLockedURL() {
 			}
 		}
 	} ).then( function( response ) {
-		if ( 1 === response.hits.hits.length ) {
-			wsu_web_crawler.url_queue[ response.hits.hits[ 0 ]._source.url ] = response.hits.hits[ 0 ]._id;
-			c.queue( response.hits.hits[ 0 ]._source.url );
+		for ( var j = 0, y = response.hits.hits.length; j < y; j++ ) {
+			wsu_web_crawler.url_queue[ response.hits.hits[ j ]._source.url ] = response.hits.hits[ j ]._id;
+			c.queue( response.hits.hits[ j ]._source.url );
+		}
 
+		if ( 1 <= response.hits.hits.length ) {
+			util.log( "queueLockedURLs: Queued " + response.hits.hits.length + " URLs for ID " + wsu_web_crawler.lock_key );
 			return true;
 		}
 
+		util.log( "queueLockedURL: No locked URLs found to queue for ID " + wsu_web_crawler.lock_key );
 		throw 0;
 	} ).catch( function( error ) {
 		util.log( "Error: " + error );
@@ -235,64 +241,43 @@ function storeURLs( response ) {
  * @param {object} data
  */
 function updateURLData( url, data ) {
+	if ( "undefined" === typeof wsu_web_crawler.url_queue[ url ] ) {
+		util.log( "Error updating "  + url + ", ID " + wsu_web_crawler.url_queue[ url ] );
+		return;
+	}
+
 	var elastic = elasticClient();
-	elastic.search( {
+	var d = new Date();
+
+	elastic.update( {
 		index: process.env.ES_URL_INDEX,
 		type: "url",
+		id: wsu_web_crawler.url_queue[ url ],
 		body: {
-			size: 1,
-			query: {
-				bool: {
-					must: {
-						term: {
-							url: url
-						}
-					}
-				}
+			doc: {
+				identity: data.identity_version,
+				analytics: data.global_analytics,
+				status_code: data.status_code,
+				redirect_url: data.redirect_url,
+				title: data.title,
+				image: data.image,
+				description: data.description,
+				content: data.content,
+				last_search_scan: d.getTime(),
+				search_scan_priority: null,
+				a11y_scan_priority: 50,
+				anchor_scan_priority: 50,
+				anchors: data.anchors
 			}
 		}
-	} ).then( function( response ) {
-		var d = new Date();
-
-		if ( 0 === response.hits.hits.length ) {
-			wsu_web_crawler.scan_urls.push( url ); // Requeue the URL to be scanned.
-			util.log( "Error: " + url + " No record found to update" );
-		} else {
-			var elastic = elasticClient();
-			elastic.update( {
-				index: process.env.ES_URL_INDEX,
-				type: "url",
-				id: response.hits.hits[ 0 ]._id,
-				body: {
-					doc: {
-						identity: data.identity_version,
-						analytics: data.global_analytics,
-						status_code: data.status_code,
-						redirect_url: data.redirect_url,
-						title: data.title,
-						image: data.image,
-						description: data.description,
-						content: data.content,
-						last_search_scan: d.getTime(),
-						search_scan_priority: null,
-						a11y_scan_priority: 50,
-						anchor_scan_priority: 50,
-						anchors: data.anchors
-					}
-				}
-			} )
-			.then( function() {
-				wsu_web_crawler.scanned_verify++;
-				util.log( "Updated: " + url );
-			} )
-			.catch( function( error ) {
-				// @todo what do do with a failed scan?
-				util.log( "Error (updateURLData 2): " + url + " " + error.message );
-			} );
-		}
-	} ).catch( function( error ) {
+	} )
+	.then( function() {
+		wsu_web_crawler.scanned_verify++;
+		util.log( "Updated: " + url );
+	} )
+	.catch( function( error ) {
 		// @todo what do do with a failed scan?
-		util.log( "Error (updateURLData 1): " + error.message );
+		util.log( "Error (updateURLData 2): " + url + " " + error.message );
 	} );
 }
 
@@ -532,7 +517,7 @@ function checkURLStore() {
  * Log the completion of individual queues.
  */
 function finishResult() {
-	util.log( "Status: " + wsu_web_crawler.scanned_verify + " scanned, " + wsu_web_crawler.stored_urls + " stored, " + wsu_web_crawler.store_urls.length + " to store" );
+	util.log( "Status: " + wsu_web_crawler.scanned_verify + " scanned, " + wsu_web_crawler.locked_urls + " locked, " + wsu_web_crawler.stored_urls + " stored, " + wsu_web_crawler.store_urls.length + " to store" );
 }
 
 /**
@@ -618,4 +603,4 @@ var c = getCrawler();
 // Handle the bulk storage of found URLs in another thread.
 setTimeout( storeFoundURLs, 2000 );
 setInterval( lockURL, 1000 );
-setInterval( queueLockedURL, 1000 );
+setInterval( queueLockedURLs, 1000 );
