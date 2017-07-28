@@ -6,12 +6,15 @@ Crawls URLs for URLs and stores URLs in Elasticsearch.
 
 ## Overview
 
-Given an initial URL, say `https://wsu.edu/`, the WSU Web Crawler will parse its HTML for all `href` attributes attached to anchors.
+The WSU Web Crawler maintains a record of URLs in Elasticsearch. These URLs are collected by crawling for all `href` attributes attached to anchor elements in a URL's HTML.
 
-* URLs found are marked as "to scan" if they have not been previously scanned.
-* URLs found are marked as "to store" if they have not been previously stored.
+A series of priorities and schedules determines the order in which URLs are stored:
 
-URLs marked as "to store" are sent in batches to Elasticsearch. URLs marked as "to scan" or held in memory and used to repeat the process. Once no more URLs remain "to scan", or if a manual limit has been reached, the script will stop.
+* URLs with a `search_scan_priority` value of 1 through 999.
+* URLs that have never been scanned and do not have a `search_scan_date`.
+* URLs with a `search_scan_date` of older than 24 hours.
+
+Once a URL is scanned, its record is updated with a `search_scan_date` and the `search_scan_priority` is removed.
 
 ## Environment
 
@@ -20,10 +23,18 @@ Environment data is stored in a `.env` file that is not part of this repository.
 ```
 ES_HOST="https://myelastic.domain"
 ES_URL_INDEX="url-storage-index"
+LOCK_KEY=1001
 ROOT_DOMAINS="root.domain"
 SKIP_DOMAINS="problem1.root.domain,problem2.root.domain"
 START_URLS="https://root.domain"
 ```
+
+* `ES_HOST` is the hostname of an Elasticsearch instance.
+* `ES_URL_INDEX` is the name of the index where URL records should be stored.
+* `LOCK_KEY` is the key attached to a single crawler instance. This can be used to run multiple crawlers on the same Elasticsearch data.
+* `ROOT_DOMAINS` is a comma separated list of root domains that are allowed to be crawled.
+* `SKIP_DOMAINS` is a comma separated list of subdomains that should be skipped.
+* `START_URLS` is a comma separated list of URLs that should be used to populate the initial Elasticsearch setup.
 
 ## Schema
 
@@ -42,18 +53,32 @@ The "url" type will have these mapped properties:
 * status_code: integer
 * redirect_url: keyword
 * last_a11y_scan: date, epoch_millis
-* force_a11y_scan: integer
+* a11y_scan_priority: integer
 * last_search_scan: date, epoch_millis
-* force_search_scan: integer
+* search_scan_priority: integer
 * last_https_scan: date, epoch_millis
-* force_https_scan: integer
+* https_scan_priority: integer
+* last_anchor_scan: date, epoch_millis
+* anchor_scan_priority: integer
+
+An array of "anchors" found in the scan of a URL is also stored. Because Elasticsearch does not have a defined "array" type and we are not searching for this data, it is left out of the defined schema.
 
 This library uses several of these properties and provides a structure that can be used in the future by other libraries.
+
+### Scan priorities
+
+Scan priority fields are used to set priority outside of the normal date based process and to lock records that are currently being scanned.
+
+* If a scan priority field is set higher than 999, it is locked.
+* `a11y_scan_priority` is set to *50* after a data collector scan. The accessibility collector uses this data.
+* `anchor_scan_priority` is set to `50` after a data collector scan. The URL collector uses this data.
+* `search_scan_priority` is set to `null` by the search data collector, indicating that the content is fresh.
 
 ### Status Code
 
 In most cases, the standard status code returned for a request is logged. For some URLs, we hijack this status code so that we can apply different querying logic in the future.
 
+* URLs that result in an error on crawl that can not be managed otherwise are logged with a status code of `800`.
 * PDF URLs that respond with `200` are logged with the status code of `900`.
 * `doc` and `docx` URLs that respond with `200` are logged with the status code of `901`.
 * Spreadsheet URLs that respond with `200` are logged with the status code of `902`.
@@ -66,7 +91,7 @@ Run `npm install` to install all production and development dependencies.
 
 ### Start the crawler
 
-Once everything is configured, run `node crawl.js` to start crawling.
+Once everything is configured, run `node data-collector.js` to start crawling.
 
 ### Tests
 
