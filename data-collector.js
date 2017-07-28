@@ -12,8 +12,7 @@ var wsu_web_crawler = {
 	store_urls: [],    // List of URLs to be stored.
 	scanned_verify: 0, // Number of URLs scanned.
 	stored_urls: 0,    // Number of URLs stored.
-	locked_urls: 0,    // Total number of URLs locked by this crawler instance.
-	queue_lock: false  // Whether the crawler queue is locked.
+	locked_urls: 0     // Total number of URLs locked by this crawler instance.
 };
 
 wsu_web_crawler.lock_key = process.env.LOCK_KEY;
