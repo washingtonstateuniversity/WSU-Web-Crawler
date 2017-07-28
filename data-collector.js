@@ -16,7 +16,6 @@ var wsu_web_crawler = {
 };
 
 wsu_web_crawler.lock_key = process.env.LOCK_KEY;
-wsu_web_crawler.scan_urls = process.env.START_URLS.split( "," );
 
 var parse_href = new ParseHref( {
 
