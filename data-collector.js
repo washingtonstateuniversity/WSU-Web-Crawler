@@ -276,6 +276,7 @@ function updateURLData( url, data ) {
 		util.log( "Updated: " + url );
 	} )
 	.catch( function( error ) {
+
 		// @todo what do do with a failed scan?
 		util.log( "Error (updateURLData 2): " + url + " " + error.message );
 	} );
