@@ -73,7 +73,7 @@ function lockURL() {
 		index: process.env.ES_URL_INDEX,
 		type: "url",
 		body: {
-			size: 1,
+			size: 2,
 			query: {
 				range: {
 					search_scan_priority: {
@@ -94,8 +94,8 @@ function lockURL() {
 			}
 		}
 	} ).then( function( response ) {
-		if ( 1 === response.updated ) {
-			wsu_web_crawler.locked_urls++;
+		if ( 1 <= response.updated ) {
+			wsu_web_crawler.locked_urls += response.updated;
 			throw response.updated;
 		}
 
@@ -103,7 +103,7 @@ function lockURL() {
 			index: process.env.ES_URL_INDEX,
 			type: "url",
 			body: {
-				size: 1,
+				size: 2,
 				query: {
 					bool: {
 						must_not: [
@@ -117,8 +117,8 @@ function lockURL() {
 				}
 			}
 		} ).then( function( response ) {
-			if ( 1 === response.updated ) {
-				wsu_web_crawler.locked_urls++;
+			if ( 1 <= response.updated ) {
+				wsu_web_crawler.locked_urls += response.updated;
 				throw response.updated;
 			}
 
@@ -126,7 +126,7 @@ function lockURL() {
 				index: process.env.ES_URL_INDEX,
 				type: "url",
 				body: {
-					size: 1,
+					size: 2,
 					query: {
 						bool: {
 							must_not: [
@@ -156,8 +156,8 @@ function lockURL() {
 					}
 				}
 			} ).then( function( response ) {
-				if ( 1 === response.updated ) {
-					wsu_web_crawler.locked_urls++;
+				if ( 1 <= response.updated ) {
+					wsu_web_crawler.locked_urls += response.updated;
 					throw response.updated;
 				}
 
