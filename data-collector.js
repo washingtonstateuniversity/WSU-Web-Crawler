@@ -8,6 +8,7 @@ require( "dotenv" ).config();
 
 var wsu_web_crawler = {
 	lock_key: 0,
+	locker_locked: false,
 	url_queue: {},     // Maintain a list of URLs in queue.
 	store_urls: [],    // List of URLs to be stored.
 	scanned_verify: 0, // Number of URLs scanned.
@@ -64,6 +65,12 @@ function getElasticClient() {
  * @returns {*}
  */
 function lockURL() {
+
+	// Do not lock any URLs when the lock limit has been reached.
+	if ( wsu_web_crawler.locker_locked === true ) {
+		return;
+	}
+
 	var elastic = getElasticClient();
 
 	// Look for any URLs that have been prioritized.
@@ -189,6 +196,12 @@ function queueLockedURLs() {
 			}
 		}
 	} ).then( function( response ) {
+		if ( response.hits.total >= 25 ) {
+			wsu_web_crawler.locker_locked = true;
+		} else {
+			wsu_web_crawler.locker_locked = false;
+		}
+
 		for ( var j = 0, y = response.hits.hits.length; j < y; j++ ) {
 			if ( response.hits.hits[ j ]._source.url in wsu_web_crawler.url_queue ) {
 				wsu_web_crawler.url_queue[ response.hits.hits[ j ]._source.url ].count++;
