@@ -218,3 +218,10 @@ test( "A WSM URL should be stripped of multiple blocked query parameters.", func
 	t.equal( url, "http://wsm.wsu.edu/ourstory/index.php?title=HelloWorld" );
 	t.end();
 } );
+
+test( "A digital exchibits URL should be stripped of multiple blocked query parameters.", function( t ) {
+	var url = app.get_url( "http://digitalexhibits.libraries.wsu.edu/items/browse?tags=France&sort_field=Dublin+Core%2CCreator&output=omeka-json", source_uri );
+
+	t.equal( url, "http://digitalexhibits.libraries.wsu.edu/items/browse?tags=France" );
+	t.end();
+} );
