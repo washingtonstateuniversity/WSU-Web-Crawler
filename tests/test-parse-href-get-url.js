@@ -127,3 +127,101 @@ test( "A relative URL with flagged file extension should report as false.", func
 	t.false( url );
 	t.end();
 } );
+
+test( "A /digital-heritage/category/ plateau portal path should report as false.", function( t ) {
+	var url = app.get_url( "https://plateauportal.wsulibs.wsu.edu/digital-heritage/category/", source_uri );
+
+	t.false( url );
+	t.end();
+} );
+
+test( "A /digital-heritage/media-type/ plateau portal path should report as false.", function( t ) {
+	var url = app.get_url( "https://plateauportal.wsulibs.wsu.edu/digital-heritage/media-type/", source_uri );
+
+	t.false( url );
+	t.end();
+} );
+
+test( "A /digital-heritage/keywords/ plateau portal path should report as false.", function( t ) {
+	var url = app.get_url( "https://plateauportal.wsulibs.wsu.edu/digital-heritage/keywords/", source_uri );
+
+	t.false( url );
+	t.end();
+} );
+
+test( "A /digital-heritage/field_collection/ plateau portal path should report as false.", function( t ) {
+	var url = app.get_url( "https://plateauportal.wsulibs.wsu.edu/digital-heritage/field_collection/", source_uri );
+
+	t.false( url );
+	t.end();
+} );
+
+test( "A /digital-heritage/community/ plateau portal path should report as false.", function( t ) {
+	var url = app.get_url( "https://plateauportal.wsulibs.wsu.edu/digital-heritage/community/", source_uri );
+
+	t.false( url );
+	t.end();
+} );
+
+test( "A /xmlui/discover? research.wsulibs.wsu.edu path should report as false.", function( t ) {
+	var url = app.get_url( "https://research.wsulibs.wsu.edu/xmlui/discover?filtertype=morethings", source_uri );
+
+	t.false( url );
+	t.end();
+} );
+
+test( "A /xmlui/discover path on research.wsulibs.wsu.edu with no additional data should be allowed.", function( t ) {
+	var url = app.get_url( "https://research.wsulibs.wsu.edu/xmlui/discover/", source_uri );
+
+	t.equal( url, "https://research.wsulibs.wsu.edu/xmlui/discover/" );
+	t.end();
+} );
+
+test( "A path starting with /ourstory/index.php?title=Special: on wsm.wsu.edu should report as false.", function( t ) {
+	var url = app.get_url( "http://wsm.wsu.edu/ourstory/index.php?title=Special:WhatLinksHere/Geology_Field_Trip", source_uri );
+
+	t.false( url );
+	t.end();
+} );
+
+test( "A WSM URL should be stripped of action query parameters.", function( t ) {
+	var url = app.get_url( "http://wsm.wsu.edu/ourstory/index.php?title=HelloWorld&action=nothing", source_uri );
+
+	t.equal( url, "http://wsm.wsu.edu/ourstory/index.php?title=HelloWorld" );
+	t.end();
+} );
+
+test( "A WSM URL should be stripped of redlink query parameters.", function( t ) {
+	var url = app.get_url( "http://wsm.wsu.edu/ourstory/index.php?title=HelloWorld&redlink=1", source_uri );
+
+	t.equal( url, "http://wsm.wsu.edu/ourstory/index.php?title=HelloWorld" );
+	t.end();
+} );
+
+test( "A WSM URL should be stripped of printable query parameters.", function( t ) {
+	var url = app.get_url( "http://wsm.wsu.edu/ourstory/index.php?title=HelloWorld&printable=yes", source_uri );
+
+	t.equal( url, "http://wsm.wsu.edu/ourstory/index.php?title=HelloWorld" );
+	t.end();
+} );
+
+test( "A WSM URL should be stripped of oldid query parameters.", function( t ) {
+	var url = app.get_url( "http://wsm.wsu.edu/ourstory/index.php?title=HelloWorld&oldid=1234", source_uri );
+
+	t.equal( url, "http://wsm.wsu.edu/ourstory/index.php?title=HelloWorld" );
+	t.end();
+} );
+
+test( "A WSM URL should be stripped of multiple blocked query parameters.", function( t ) {
+	var url = app.get_url( "http://wsm.wsu.edu/ourstory/index.php?title=HelloWorld&action=test&printable=yes&redlink=1&oldid=1234", source_uri );
+
+	t.equal( url, "http://wsm.wsu.edu/ourstory/index.php?title=HelloWorld" );
+	t.end();
+} );
+
+test( "A digital exchibits URL should be stripped of multiple blocked query parameters.", function( t ) {
+	var url = app.get_url( "http://digitalexhibits.libraries.wsu.edu/items/browse?tags=France&sort_field=Dublin+Core%2CCreator&output=omeka-json", source_uri );
+
+	t.equal( url, "http://digitalexhibits.libraries.wsu.edu/items/browse?tags=France" );
+	t.end();
+} );
