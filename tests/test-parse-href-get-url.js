@@ -183,3 +183,38 @@ test( "A path starting with /ourstory/index.php?title=Special: on wsm.wsu.edu sh
 	t.false( url );
 	t.end();
 } );
+
+test( "A WSM URL should be stripped of action query parameters.", function( t ) {
+	var url = app.get_url( "http://wsm.wsu.edu/ourstory/index.php?title=HelloWorld&action=nothing", source_uri );
+
+	t.equal( url, "http://wsm.wsu.edu/ourstory/index.php?title=HelloWorld" );
+	t.end();
+} );
+
+test( "A WSM URL should be stripped of redlink query parameters.", function( t ) {
+	var url = app.get_url( "http://wsm.wsu.edu/ourstory/index.php?title=HelloWorld&redlink=1", source_uri );
+
+	t.equal( url, "http://wsm.wsu.edu/ourstory/index.php?title=HelloWorld" );
+	t.end();
+} );
+
+test( "A WSM URL should be stripped of printable query parameters.", function( t ) {
+	var url = app.get_url( "http://wsm.wsu.edu/ourstory/index.php?title=HelloWorld&printable=yes", source_uri );
+
+	t.equal( url, "http://wsm.wsu.edu/ourstory/index.php?title=HelloWorld" );
+	t.end();
+} );
+
+test( "A WSM URL should be stripped of oldid query parameters.", function( t ) {
+	var url = app.get_url( "http://wsm.wsu.edu/ourstory/index.php?title=HelloWorld&oldid=1234", source_uri );
+
+	t.equal( url, "http://wsm.wsu.edu/ourstory/index.php?title=HelloWorld" );
+	t.end();
+} );
+
+test( "A WSM URL should be stripped of multiple blocked query parameters.", function( t ) {
+	var url = app.get_url( "http://wsm.wsu.edu/ourstory/index.php?title=HelloWorld&action=test&printable=yes&redlink=1&oldid=1234", source_uri );
+
+	t.equal( url, "http://wsm.wsu.edu/ourstory/index.php?title=HelloWorld" );
+	t.end();
+} );
