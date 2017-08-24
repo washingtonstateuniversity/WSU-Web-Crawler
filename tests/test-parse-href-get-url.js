@@ -176,3 +176,10 @@ test( "A /xmlui/discover path on research.wsulibs.wsu.edu with no additional dat
 	t.equal( url, "https://research.wsulibs.wsu.edu/xmlui/discover/" );
 	t.end();
 } );
+
+test( "A path starting with /ourstory/index.php?title=Special: on wsm.wsu.edu should report as false.", function( t ) {
+	var url = app.get_url( "http://wsm.wsu.edu/ourstory/index.php?title=Special:WhatLinksHere/Geology_Field_Trip", source_uri );
+
+	t.false( url );
+	t.end();
+} );
