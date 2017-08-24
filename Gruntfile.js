@@ -29,6 +29,7 @@ module.exports = function( grunt ) {
 			crawler_script: {
 				src: [ "./*.js", "./lib/*.js", "./tests/*.js" ],
 				options: {
+					esversion: 6,
 					bitwise: true,
 					curly: true,
 					eqeqeq: true,
