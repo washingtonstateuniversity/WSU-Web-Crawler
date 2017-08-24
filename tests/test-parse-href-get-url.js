@@ -162,3 +162,17 @@ test( "A /digital-heritage/community/ plateau portal path should report as false
 	t.false( url );
 	t.end();
 } );
+
+test( "A /xmlui/discover? research.wsulibs.wsu.edu path should report as false.", function( t ) {
+	var url = app.get_url( "https://research.wsulibs.wsu.edu/xmlui/discover?filtertype=morethings", source_uri );
+
+	t.false( url );
+	t.end();
+} );
+
+test( "A /xmlui/discover path on research.wsulibs.wsu.edu with no additional data should be allowed.", function( t ) {
+	var url = app.get_url( "https://research.wsulibs.wsu.edu/xmlui/discover/", source_uri );
+
+	t.equal( url, "https://research.wsulibs.wsu.edu/xmlui/discover/" );
+	t.end();
+} );
