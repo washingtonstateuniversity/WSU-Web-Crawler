@@ -127,3 +127,38 @@ test( "A relative URL with flagged file extension should report as false.", func
 	t.false( url );
 	t.end();
 } );
+
+test( "A /digital-heritage/category/ plateau portal path should report as false.", function( t ) {
+	var url = app.get_url( "https://plateauportal.wsulibs.wsu.edu/digital-heritage/category/", source_uri );
+
+	t.false( url );
+	t.end();
+} );
+
+test( "A /digital-heritage/media-type/ plateau portal path should report as false.", function( t ) {
+	var url = app.get_url( "https://plateauportal.wsulibs.wsu.edu/digital-heritage/media-type/", source_uri );
+
+	t.false( url );
+	t.end();
+} );
+
+test( "A /digital-heritage/keywords/ plateau portal path should report as false.", function( t ) {
+	var url = app.get_url( "https://plateauportal.wsulibs.wsu.edu/digital-heritage/keywords/", source_uri );
+
+	t.false( url );
+	t.end();
+} );
+
+test( "A /digital-heritage/field_collection/ plateau portal path should report as false.", function( t ) {
+	var url = app.get_url( "https://plateauportal.wsulibs.wsu.edu/digital-heritage/field_collection/", source_uri );
+
+	t.false( url );
+	t.end();
+} );
+
+test( "A /digital-heritage/community/ plateau portal path should report as false.", function( t ) {
+	var url = app.get_url( "https://plateauportal.wsulibs.wsu.edu/digital-heritage/community/", source_uri );
+
+	t.false( url );
+	t.end();
+} );
