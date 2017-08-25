@@ -198,6 +198,20 @@ test( "A /xmlui/discover path on research.libraries.wsu.edu with no additional d
 	t.end();
 } );
 
+test( "A /catalog/product_compare path on Magento stores should report as false.", function( t ) {
+	var url = app.get_url( "https://oc.store.wsu.edu/catalog/product_compare/add/product/33/uenc/aHR0cHM6Ly9vYy5zdG9yZS53c3UuZWR1L3RyYWluaW5nLW1hdGVyaWFscy9ib29rcy5odG1sP3A9Mg,,/form_key/iC2lOjHe5TVjOrON/", source_uri );
+
+	t.false( url );
+	t.end();
+} );
+
+test( "A wishlist path on Magento stores should report as false.", function( t ) {
+	let url = app.get_url( "https://oc.store.wsu.edu/wishlist/index/add/product/34/form_key/EQDLDtfQfbMoMIk9/", source_uri );
+
+	t.false( url );
+	t.end();
+} );
+
 test( "A path starting with /ourstory/index.php?title=Special: on wsm.wsu.edu should report as false.", function( t ) {
 	var url = app.get_url( "http://wsm.wsu.edu/ourstory/index.php?title=Special:WhatLinksHere/Geology_Field_Trip", source_uri );
 
