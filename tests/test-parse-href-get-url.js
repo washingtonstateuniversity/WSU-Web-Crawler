@@ -170,10 +170,45 @@ test( "A /xmlui/discover? research.libraries.wsu.edu path should report as false
 	t.end();
 } );
 
+test( "A relative /xmlui/discover? research.libraries.wsu.edu path should report as false.", function( t ) {
+	var url = app.get_url( "xmlui/discover?filtertype=morethings", "https://research.libraries.wsu.edu" );
+
+	t.false( url );
+	t.end();
+} );
+
+test( "A /xmlui/search-filter? research.libraries.wsu.edu path should report as false.", function( t ) {
+	var url = app.get_url( "https://research.libraries.wsu.edu/xmlui/search-filter?filtertype=morethings", source_uri );
+
+	t.false( url );
+	t.end();
+} );
+
+test( "A relative /xmlui/search-filter? research.libraries.wsu.edu path should report as false.", function( t ) {
+	var url = app.get_url( "xmlui/search-filter?filtertype=morethings", "https://research.libraries.wsu.edu" );
+
+	t.false( url );
+	t.end();
+} );
+
 test( "A /xmlui/discover path on research.libraries.wsu.edu with no additional data should be allowed.", function( t ) {
 	var url = app.get_url( "https://research.libraries.wsu.edu/xmlui/discover/", source_uri );
 
 	t.equal( url, "https://research.libraries.wsu.edu/xmlui/discover/" );
+	t.end();
+} );
+
+test( "A /catalog/product_compare path on Magento stores should report as false.", function( t ) {
+	var url = app.get_url( "https://oc.store.wsu.edu/catalog/product_compare/add/product/33/uenc/aHR0cHM6Ly9vYy5zdG9yZS53c3UuZWR1L3RyYWluaW5nLW1hdGVyaWFscy9ib29rcy5odG1sP3A9Mg,,/form_key/iC2lOjHe5TVjOrON/", source_uri );
+
+	t.false( url );
+	t.end();
+} );
+
+test( "A wishlist path on Magento stores should report as false.", function( t ) {
+	let url = app.get_url( "https://oc.store.wsu.edu/wishlist/index/add/product/34/form_key/EQDLDtfQfbMoMIk9/", source_uri );
+
+	t.false( url );
 	t.end();
 } );
 
