@@ -632,7 +632,7 @@ function handleCrawlLog( type, message ) {
  */
 function getCrawler() {
 	return new Crawler( {
-		rateLimit: 100,
+		rateLimit: 200,
 		maxConnections: 10,
 		maxRedirects: 0,
 		followRedirect: false,
@@ -667,4 +667,4 @@ var c = getCrawler();
 // Handle the bulk storage of found URLs in another thread.
 setTimeout( storeFoundURLs, 2000 );
 setInterval( lockURL, 1000 );
-setInterval( queueLockedURLs, 1000 );
+setInterval( queueLockedURLs, 1500 );
