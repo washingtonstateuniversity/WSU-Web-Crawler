@@ -170,6 +170,27 @@ test( "A /xmlui/discover? research.libraries.wsu.edu path should report as false
 	t.end();
 } );
 
+test( "A relative /xmlui/discover? research.libraries.wsu.edu path should report as false.", function( t ) {
+	var url = app.get_url( "xmlui/discover?filtertype=morethings", "https://research.libraries.wsu.edu" );
+
+	t.false( url );
+	t.end();
+} );
+
+test( "A /xmlui/search-filter? research.libraries.wsu.edu path should report as false.", function( t ) {
+	var url = app.get_url( "https://research.libraries.wsu.edu/xmlui/search-filter?filtertype=morethings", source_uri );
+
+	t.false( url );
+	t.end();
+} );
+
+test( "A relative /xmlui/search-filter? research.libraries.wsu.edu path should report as false.", function( t ) {
+	var url = app.get_url( "xmlui/search-filter?filtertype=morethings", "https://research.libraries.wsu.edu" );
+
+	t.false( url );
+	t.end();
+} );
+
 test( "A /xmlui/discover path on research.libraries.wsu.edu with no additional data should be allowed.", function( t ) {
 	var url = app.get_url( "https://research.libraries.wsu.edu/xmlui/discover/", source_uri );
 
