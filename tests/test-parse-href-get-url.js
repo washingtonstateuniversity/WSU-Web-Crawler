@@ -129,51 +129,51 @@ test( "A relative URL with flagged file extension should report as false.", func
 } );
 
 test( "A /digital-heritage/category/ plateau portal path should report as false.", function( t ) {
-	var url = app.get_url( "https://plateauportal.wsulibs.wsu.edu/digital-heritage/category/", source_uri );
+	var url = app.get_url( "https://plateauportal.libraries.wsu.edu/digital-heritage/category/", source_uri );
 
 	t.false( url );
 	t.end();
 } );
 
 test( "A /digital-heritage/media-type/ plateau portal path should report as false.", function( t ) {
-	var url = app.get_url( "https://plateauportal.wsulibs.wsu.edu/digital-heritage/media-type/", source_uri );
+	var url = app.get_url( "https://plateauportal.libraries.wsu.edu/digital-heritage/media-type/", source_uri );
 
 	t.false( url );
 	t.end();
 } );
 
 test( "A /digital-heritage/keywords/ plateau portal path should report as false.", function( t ) {
-	var url = app.get_url( "https://plateauportal.wsulibs.wsu.edu/digital-heritage/keywords/", source_uri );
+	var url = app.get_url( "https://plateauportal.libraries.wsu.edu/digital-heritage/keywords/", source_uri );
 
 	t.false( url );
 	t.end();
 } );
 
 test( "A /digital-heritage/field_collection/ plateau portal path should report as false.", function( t ) {
-	var url = app.get_url( "https://plateauportal.wsulibs.wsu.edu/digital-heritage/field_collection/", source_uri );
+	var url = app.get_url( "https://plateauportal.libraries.wsu.edu/digital-heritage/field_collection/", source_uri );
 
 	t.false( url );
 	t.end();
 } );
 
 test( "A /digital-heritage/community/ plateau portal path should report as false.", function( t ) {
-	var url = app.get_url( "https://plateauportal.wsulibs.wsu.edu/digital-heritage/community/", source_uri );
+	var url = app.get_url( "https://plateauportal.libraries.wsu.edu/digital-heritage/community/", source_uri );
 
 	t.false( url );
 	t.end();
 } );
 
-test( "A /xmlui/discover? research.wsulibs.wsu.edu path should report as false.", function( t ) {
-	var url = app.get_url( "https://research.wsulibs.wsu.edu/xmlui/discover?filtertype=morethings", source_uri );
+test( "A /xmlui/discover? research.libraries.wsu.edu path should report as false.", function( t ) {
+	var url = app.get_url( "https://research.libraries.wsu.edu/xmlui/discover?filtertype=morethings", source_uri );
 
 	t.false( url );
 	t.end();
 } );
 
-test( "A /xmlui/discover path on research.wsulibs.wsu.edu with no additional data should be allowed.", function( t ) {
-	var url = app.get_url( "https://research.wsulibs.wsu.edu/xmlui/discover/", source_uri );
+test( "A /xmlui/discover path on research.libraries.wsu.edu with no additional data should be allowed.", function( t ) {
+	var url = app.get_url( "https://research.libraries.wsu.edu/xmlui/discover/", source_uri );
 
-	t.equal( url, "https://research.wsulibs.wsu.edu/xmlui/discover/" );
+	t.equal( url, "https://research.libraries.wsu.edu/xmlui/discover/" );
 	t.end();
 } );
 
