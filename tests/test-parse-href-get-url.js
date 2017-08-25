@@ -177,6 +177,20 @@ test( "A relative /xmlui/discover? research.libraries.wsu.edu path should report
 	t.end();
 } );
 
+test( "Any URL with a discover path at research.libraries.wsu.edu should report as false.", function( t ) {
+	let url = app.get_url( "https://research.libraries.wsu.edu/xmlui/handle/2376/735/discover?filtertype=author&filter_relational_operator=authority&filter=68ea11a3-a3a4-4397-a2e0-bb457972be5d", source_uri );
+
+	t.false( url );
+	t.end();
+} );
+
+test( "Any URL with a relative discover path at research.libraries.wsu.edu should report as false.", function( t ) {
+	let url = app.get_url( "https://research.libraries.wsu.edu/xmlui/handle/2376/735/discover?filtertype=author&filter_relational_operator=authority&filter=68ea11a3-a3a4-4397-a2e0-bb457972be5d", "https://research.libraries.wsu.edu" );
+
+	t.false( url );
+	t.end();
+} );
+
 test( "A /xmlui/search-filter? research.libraries.wsu.edu path should report as false.", function( t ) {
 	var url = app.get_url( "https://research.libraries.wsu.edu/xmlui/search-filter?filtertype=morethings", source_uri );
 
