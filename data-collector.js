@@ -401,7 +401,10 @@ function handleCrawlResult( res ) {
 
 			// PhantomJS has problems processing pages that auto redirect.
 			reject_message = "Page body contains http-equiv refresh";
-		} else if ( /top.location.href/i.test( res.body ) || /window.location.href/i.test( res.body ) ) {
+		} else if ( /(top|window)\.location\.href[\s=]/i.test( res.body ) ) {
+
+			// If window.location.href or top.location.href appear in a way consistent
+			// with JS based page redirects, then mark accordingly.
 			url_update.status_code = 301;
 
 			// PhantomJS has problems processing pages that auto redirect.
