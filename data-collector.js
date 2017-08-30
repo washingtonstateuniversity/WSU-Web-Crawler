@@ -188,7 +188,7 @@ function queueLockedURLs() {
 		index: process.env.ES_URL_INDEX,
 		type: "url",
 		body: {
-			size: 10,
+			size: 15,
 			query: {
 				match: {
 					"search_scan_priority": wsu_web_crawler.lock_key
@@ -196,7 +196,7 @@ function queueLockedURLs() {
 			}
 		}
 	} ).then( function( response ) {
-		if ( response.hits.total >= 25 ) {
+		if ( response.hits.total >= 14 ) {
 			wsu_web_crawler.locker_locked = true;
 		} else {
 			wsu_web_crawler.locker_locked = false;
