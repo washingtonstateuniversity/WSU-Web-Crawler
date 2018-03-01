@@ -170,6 +170,16 @@ function lockURL() {
 			} );
 		} );
 	} ).then( function( response ) {
+		var bulk_body = [];
+
+		var url = parse_url.parse( process.env.START_URLS );
+
+		bulk_body.push( { index: { _index: process.env.ES_URL_INDEX, _type: "url" } } );
+		bulk_body.push( { url: process.env.START_URLS, domain: url.hostname } );
+
+		var elastic = elasticClient();
+		elastic.bulk( { body: bulk_body } );
+
 		throw response;
 	} ).catch( function( response ) {
 		return response;
