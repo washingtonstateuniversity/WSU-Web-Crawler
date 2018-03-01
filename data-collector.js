@@ -178,13 +178,7 @@ function lockURL() {
 		bulk_body.push( { url: process.env.START_URLS, domain: url.hostname } );
 
 		var elastic = elasticClient();
-		elastic.bulk( { body: bulk_body } )
-			.then( function() {
-				wsu_web_crawler.stored_urls = wsu_web_crawler.stored_urls + 1;
-			} )
-			.catch( function( error ) {
-				reject( "Bulk URL storage not successful: " + error.message );
-			} );
+		elastic.bulk( { body: bulk_body } );
 
 		throw response;
 	} ).catch( function( response ) {
