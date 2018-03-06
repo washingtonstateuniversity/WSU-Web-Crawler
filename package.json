@@ -17,15 +17,15 @@
   },
   "homepage": "https://github.com/washingtonstateuniversity/wsu-web-crawler#readme",
   "dependencies": {
-    "crawler": "^1.0.5",
-    "dotenv": "^4.0.0",
-    "elasticsearch": "^13.3.1",
+    "crawler": "^1.1.2",
+    "dotenv": "^5.0.1",
+    "elasticsearch": "^14.1.0",
     "url": "^0.11.0"
   },
   "devDependencies": {
-    "grunt": "^1.0.1",
+    "grunt": "^1.0.2",
     "grunt-contrib-jshint": "^1.1.0",
     "grunt-jscs": "^3.0.1",
-    "tape": "^4.8.0"
+    "tape": "^4.9.0"
   }
 }
