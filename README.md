@@ -38,7 +38,7 @@ START_URLS="https://root.domain"
 
 ## Schema
 
-Before running the script, a schema should be defined for the `ES_URL_INDEX` in Elasticsearch. Run `node setup_es.js` to create this schema automatically.
+Before running the script, a schema should be defined for the `ES_URL_INDEX` in Elasticsearch and an initial URL record should be created from the URL(s) defined in `START_URLS`. Run `node setup_es.js` once your environment variables are defined to create this schema automatically.
 
 The "url" type will have these mapped properties:
 

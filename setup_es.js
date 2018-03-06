@@ -1,16 +1,47 @@
 "use strict";
 
+let parse_url = require( "url" );
 require( "dotenv" ).config();
 
-var elastic = {};
-var elasticsearch = require( "elasticsearch" );
+if ( "undefined" === typeof( process.env.ES_URL_INDEX ) ) {
+	console.log( "No Elasticsearch URL index (ES_URL_INDEX) defined." );
+	process.exit();
+}
+
+if ( "undefined" === typeof( process.env.ES_HOST ) ) {
+	console.log( "No Elasticsearch host instance (ES_HOST) defined." );
+	process.exit();
+}
+
+if ( "undefined" === typeof( process.env.START_URLS ) ) {
+	console.log( "No initial scan URL (START_URLS) defined." );
+	process.exit();
+}
+
+let elastic = {};
+let elasticsearch = require( "elasticsearch" );
 
 elastic.client = new elasticsearch.Client( {
 	host: process.env.ES_HOST,
 	log: "error"
 } );
 
-var createIndex = function() {
+let startIndex = function() {
+	let bulk_body = [];
+
+	let start_urls = process.env.START_URLS.split( "," );
+
+	for ( let url of start_urls ) {
+		url = parse_url.parse( url );
+
+		bulk_body.push( { index: { _index: process.env.ES_URL_INDEX, _type: "url" } } );
+		bulk_body.push( { url: url.href, domain: url.hostname } );
+	}
+
+	elastic.client.bulk( { body: bulk_body } );
+};
+
+let createIndex = function() {
 	elastic.client.indices.create( {
 		index: process.env.ES_URL_INDEX,
 		body: {
@@ -82,6 +113,7 @@ var createIndex = function() {
 	}, function( error, response ) {
 		if ( undefined !== typeof response && true === response.acknowledged ) {
 			console.log( "Index schema created." );
+			startIndex();
 		} else {
 			console.log( "Error with index creation." );
 			console.log( error );
