@@ -2,15 +2,15 @@
 
 require( "dotenv" ).config();
 
-var elastic = {};
-var elasticsearch = require( "elasticsearch" );
+let elastic = {};
+let elasticsearch = require( "elasticsearch" );
 
 elastic.client = new elasticsearch.Client( {
 	host: process.env.ES_HOST,
 	log: "error"
 } );
 
-var createIndex = function() {
+let createIndex = function() {
 	elastic.client.indices.create( {
 		index: process.env.ES_URL_INDEX,
 		body: {
