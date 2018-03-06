@@ -274,3 +274,10 @@ test( "A digital exchibits URL should be stripped of multiple blocked query para
 	t.equal( url, "http://digitalexhibits.libraries.wsu.edu/items/browse?tags=France" );
 	t.end();
 } );
+
+test( "An alumni URL without query parameters should not generate any errors.", function( t ) {
+	let url = app.get_url( "http://alumni.wsu.edu", source_uri );
+
+	t.equal( url, "http://alumni.wsu.edu/" );
+	t.end();
+} );
