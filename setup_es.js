@@ -2,6 +2,21 @@
 
 require( "dotenv" ).config();
 
+if ( "undefined" === typeof( process.env.ES_URL_INDEX ) ) {
+	console.log( "No Elasticsearch URL index (ES_URL_INDEX) defined." );
+	process.exit();
+}
+
+if ( "undefined" === typeof( process.env.ES_HOST ) ) {
+	console.log( "No Elasticsearch host instance (ES_HOST) defined." );
+	process.exit();
+}
+
+if ( "undefined" === typeof( process.env.START_URLS ) ) {
+	console.log( "No initial scan URL (START_URLS) defined." );
+	process.exit();
+}
+
 let elastic = {};
 let elasticsearch = require( "elasticsearch" );
 
