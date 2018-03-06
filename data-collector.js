@@ -209,7 +209,6 @@ function queueLockedURLs() {
 				if ( 30 <= wsu_web_crawler.url_queue[ response.hits.hits[ j ]._source.url ].count ) {
 					markURLUnresponsive( response.hits.hits[ j ]._source.url );
 				}
-				util.log( "URL already queued" );
 				continue;
 			}
 
