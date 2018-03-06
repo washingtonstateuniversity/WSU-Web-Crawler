@@ -1,5 +1,6 @@
 "use strict";
 
+let parse_url = require( "url" );
 require( "dotenv" ).config();
 
 if ( "undefined" === typeof( process.env.ES_URL_INDEX ) ) {
@@ -24,6 +25,21 @@ elastic.client = new elasticsearch.Client( {
 	host: process.env.ES_HOST,
 	log: "error"
 } );
+
+let startIndex = function() {
+	let bulk_body = [];
+
+	let start_urls = process.env.START_URLS.split( "," );
+
+	for ( let url of start_urls ) {
+		url = parse_url.parse( url );
+
+		bulk_body.push( { index: { _index: process.env.ES_URL_INDEX, _type: "url" } } );
+		bulk_body.push( { url: url.href, domain: url.hostname } );
+	}
+
+	elastic.client.bulk( { body: bulk_body } );
+};
 
 let createIndex = function() {
 	elastic.client.indices.create( {
@@ -97,6 +113,7 @@ let createIndex = function() {
 	}, function( error, response ) {
 		if ( undefined !== typeof response && true === response.acknowledged ) {
 			console.log( "Index schema created." );
+			startIndex();
 		} else {
 			console.log( "Error with index creation." );
 			console.log( error );
