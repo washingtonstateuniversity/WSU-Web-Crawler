@@ -1,0 +1,17 @@
+{
+	"allowed_root_domains": [
+		"example.com"
+	],
+	"flagged_domains": [
+		"noscan.example.com",
+		"secret.example.com"
+	],
+	"flagged_extensions": [
+		"jpg",
+		"jpeg",
+		"gif",
+		"png",
+		"exe",
+		"zip"
+	]
+}
