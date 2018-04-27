@@ -8,7 +8,9 @@ module.exports = function( grunt ) {
 				options: {
 					preset: "jquery",
 					requireCamelCaseOrUpperCaseIdentifiers: false, // We rely on name_name too much to change them all.
-					maximumLineLength: 250
+					maximumLineLength: 250,
+					requireOperatorBeforeLineBreak: false,
+					disallowTrailingComma: false
 				}
 			}
 		},
@@ -35,6 +37,7 @@ module.exports = function( grunt ) {
 					eqeqeq: true,
 					forin: true,
 					freeze: true,
+					laxbreak: true,
 					noarg: true,
 					nonbsp: true,
 					quotmark: "double",

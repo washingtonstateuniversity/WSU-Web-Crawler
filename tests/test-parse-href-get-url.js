@@ -28,6 +28,20 @@ var app = new ParseHref( {
 		"png"
 	],
 
+	"global_rules": {
+		"exclude_by": {
+			"starts_with": {},
+			"contains": [
+				"?ical=1",
+				"jtCalendar.php?",
+				"tribe_paged",
+				"tribe_venue",
+				"tribe_organizer",
+				"post_type=tribe_events"
+			]
+		}
+	},
+
 	// Domain rules
 	domain_rules: {
 		"www.test.wsu.edu": {
@@ -35,7 +49,56 @@ var app = new ParseHref( {
 				hostname: "test.wsu.edu",
 				protocol: "https"
 			}
-		}
+		},
+		"plateauportal.libraries.wsu.edu": {
+			exclude_by: {
+				starts_with: [
+					"/digital-heritage/category/",
+					"/digital-heritage/media-type/",
+					"/digital-heritage/keywords/",
+					"/digital-heritage/field_collection/",
+					"/digital-heritage/community/",
+					"/category/",
+					"/dictionary",
+					"/user/login?destination"
+				]
+			}
+		},
+		"robosub.eecs.wsu.edu": {
+			exclude_by: {
+				starts_with: [
+					"/wiki/"
+				]
+			}
+		},
+		"research.libraries.wsu.edu": {
+			"exclude_by": {
+				"contains": [
+					"search-filter?",
+					"discover?",
+					"/feed/"
+				]
+			}
+		},
+		"wsm.wsu.edu": {
+			"exclude_by": {
+				"starts_with": [
+					"/ourstory/index.php?title=Special:"
+				]
+			},
+			"bad_params": "(action|redlink|printable|oldid)"
+		},
+		"digitalexhibits.libraries.wsu.edu": {
+			"bad_params": "(sort_field|output)"
+		},
+		"oc.store.wsu.edu": {
+			"exclude_by": {
+				"starts_with": [
+					"/catalog/product_compare",
+					"/wishlist/"
+				]
+			}
+		},
 	}
 } );
 
@@ -309,5 +372,19 @@ test( "An alumni URL without query parameters should not generate any errors.", 
 	let url = app.get_url( "http://alumni.wsu.edu", source_uri );
 
 	t.equal( url, "http://alumni.wsu.edu/" );
+	t.end();
+} );
+
+test( "A robosub.eecs.wsu.edu scan should exclude the /wiki/ path.", function( t ) {
+	let url = app.get_url( "http://robosub.eecs.wsu.edu/wiki/test", source_uri );
+
+	t.false( url );
+	t.end();
+} );
+
+test( "A robosub.eecs.wsu.edu scan should not exclude the /not-a-wiki/ path.", function( t ) {
+	let url = app.get_url( "http://robosub.eecs.wsu.edu/not-a-wiki/test", source_uri );
+
+	t.equal( url, "http://robosub.eecs.wsu.edu/not-a-wiki/test" );
 	t.end();
 } );

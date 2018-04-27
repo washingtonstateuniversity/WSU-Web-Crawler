@@ -6,7 +6,7 @@ var util = require( "util" );
 
 try {
 	var parse_config = require( "./parse-config.json" );
-} catch( error ) {
+} catch ( error ) {
 	util.log( error );
 	util.log( "Error loading parse_config.json. Starting crawl with no exclusions." );
 	var parse_config = {
