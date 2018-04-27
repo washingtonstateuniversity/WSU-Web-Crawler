@@ -13,5 +13,13 @@
 		"png",
 		"exe",
 		"zip"
-	]
+	],
+	"domain_rules": {
+		"www.example.com": {
+			"canonical": {
+				"hostname": "example.com",
+				"protocol": "https"
+			}
+		}
+	}
 }
