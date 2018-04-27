@@ -13,8 +13,7 @@ var app = new ParseHref( {
 
 	// These subdomains are flagged to not be scanned.
 	flagged_domains: [
-		"parking.wsu.edu",
-		"www.parking.wsu.edu"
+		"noscan.wsu.edu"
 	],
 
 	// These file extensions are flagged to not be scanned.
@@ -28,16 +27,13 @@ var app = new ParseHref( {
 		"png"
 	],
 
-	"global_rules": {
-		"exclude_by": {
-			"starts_with": {},
-			"contains": [
-				"?ical=1",
-				"jtCalendar.php?",
-				"tribe_paged",
-				"tribe_venue",
-				"tribe_organizer",
-				"post_type=tribe_events"
+	global_rules: {
+		exclude_by: {
+			starts_with: [
+				"/global-exclude-path/",
+			],
+			contains: [
+				"global-contains-text",
 			]
 		}
 	},
@@ -50,55 +46,17 @@ var app = new ParseHref( {
 				protocol: "https"
 			}
 		},
-		"plateauportal.libraries.wsu.edu": {
+		"test.wsu.edu": {
 			exclude_by: {
 				starts_with: [
-					"/digital-heritage/category/",
-					"/digital-heritage/media-type/",
-					"/digital-heritage/keywords/",
-					"/digital-heritage/field_collection/",
-					"/digital-heritage/community/",
-					"/category/",
-					"/dictionary",
-					"/user/login?destination"
-				]
-			}
-		},
-		"robosub.eecs.wsu.edu": {
-			exclude_by: {
-				starts_with: [
-					"/wiki/"
-				]
-			}
-		},
-		"research.libraries.wsu.edu": {
-			"exclude_by": {
-				"contains": [
-					"search-filter?",
-					"discover?",
-					"/feed/"
-				]
-			}
-		},
-		"wsm.wsu.edu": {
-			"exclude_by": {
-				"starts_with": [
-					"/ourstory/index.php?title=Special:"
+					"/single-exclude-path/"
+				],
+				contains: [
+					"/single-exclude-text/"
 				]
 			},
-			"bad_params": "(action|redlink|printable|oldid)"
-		},
-		"digitalexhibits.libraries.wsu.edu": {
-			"bad_params": "(sort_field|output)"
-		},
-		"oc.store.wsu.edu": {
-			"exclude_by": {
-				"starts_with": [
-					"/catalog/product_compare",
-					"/wishlist/"
-				]
-			}
-		},
+			bad_params: "(bad_param_one|bad_param_two)"
+		}
 	}
 } );
 
@@ -123,7 +81,7 @@ test( "A path should be built onto the source URI.", function( t ) {
 	t.end();
 } );
 
-test( "A domain not on the allowed domains list should be ignored.", function( t ) {
+test( "A domain not on the allowed root domains list should be ignored.", function( t ) {
 	var url = app.get_url( "https://google.com", source_uri );
 
 	t.false( url );
@@ -187,7 +145,7 @@ test( "A hash plus text URL should report as false", function( t ) {
 } );
 
 test( "A flagged domain should report as false", function( t ) {
-	var url = app.get_url( "https://parking.wsu.edu", source_uri );
+	var url = app.get_url( "https://noscan.wsu.edu", source_uri );
 
 	t.false( url );
 	t.end();
@@ -221,170 +179,44 @@ test( "A relative URL with flagged file extension should report as false.", func
 	t.end();
 } );
 
-test( "A /digital-heritage/category/ plateau portal path should report as false.", function( t ) {
-	var url = app.get_url( "https://plateauportal.libraries.wsu.edu/digital-heritage/category/", source_uri );
+test( "A path starting with excluded start text for a domain should report as false.", function( t ) {
+	let url = app.get_url( "https://test.wsu.edu/single-exclude-path/another-path/" );
 
 	t.false( url );
 	t.end();
 } );
 
-test( "A /digital-heritage/media-type/ plateau portal path should report as false.", function( t ) {
-	var url = app.get_url( "https://plateauportal.libraries.wsu.edu/digital-heritage/media-type/", source_uri );
+test( "A path containing excluded text for a domain should report as false.", function ( t ) {
+	let url = app.get_url( "https://test.wsu.edu/test/single-exclude-text/another-path/" );
 
 	t.false( url );
 	t.end();
 } );
 
-test( "A /digital-heritage/keywords/ plateau portal path should report as false.", function( t ) {
-	var url = app.get_url( "https://plateauportal.libraries.wsu.edu/digital-heritage/keywords/", source_uri );
+test( "A path containing excluded start text, but not starting with it, should return the URL.", function ( t ) {
+	let url = app.get_url( "https://test.wsu.edu/test/single-exclude-path/another-path/" );
+
+	t.equal( url, "https://test.wsu.edu/test/single-exclude-path/another-path/" );
+	t.end();
+} );
+
+test( "A path starting with global excluded start text should report as false.", function ( t ) {
+	let url = app.get_url( "https://test.wsu.edu/global-exclude-path/another-path/" );
 
 	t.false( url );
 	t.end();
 } );
 
-test( "A /digital-heritage/field_collection/ plateau portal path should report as false.", function( t ) {
-	var url = app.get_url( "https://plateauportal.libraries.wsu.edu/digital-heritage/field_collection/", source_uri );
+test( "A path containing globally excluded text should report as false.", function ( t ) {
+	let url = app.get_url( "https://test.wsu.edu/test/global-contains-text/another-path/" );
 
 	t.false( url );
 	t.end();
 } );
 
-test( "A /digital-heritage/community/ plateau portal path should report as false.", function( t ) {
-	var url = app.get_url( "https://plateauportal.libraries.wsu.edu/digital-heritage/community/", source_uri );
+test( "A pathj containing bad parameters identified for a domain should remove those params.", function( t ) {
+	let url = app.get_url( "https://test.wsu.edu/test/?one=keep&bad_param_one=remove&bad_param_two=remove&good_param=keep" );
 
-	t.false( url );
+	t.equal( url, "https://test.wsu.edu/test/?one=keep&good_param=keep" );
 	t.end();
-} );
-
-test( "A /xmlui/discover? research.libraries.wsu.edu path should report as false.", function( t ) {
-	var url = app.get_url( "https://research.libraries.wsu.edu/xmlui/discover?filtertype=morethings", source_uri );
-
-	t.false( url );
-	t.end();
-} );
-
-test( "A relative /xmlui/discover? research.libraries.wsu.edu path should report as false.", function( t ) {
-	var url = app.get_url( "xmlui/discover?filtertype=morethings", "https://research.libraries.wsu.edu" );
-
-	t.false( url );
-	t.end();
-} );
-
-test( "Any URL with a discover path at research.libraries.wsu.edu should report as false.", function( t ) {
-	let url = app.get_url( "https://research.libraries.wsu.edu/xmlui/handle/2376/735/discover?filtertype=author&filter_relational_operator=authority&filter=68ea11a3-a3a4-4397-a2e0-bb457972be5d", source_uri );
-
-	t.false( url );
-	t.end();
-} );
-
-test( "Any URL with a relative discover path at research.libraries.wsu.edu should report as false.", function( t ) {
-	let url = app.get_url( "https://research.libraries.wsu.edu/xmlui/handle/2376/735/discover?filtertype=author&filter_relational_operator=authority&filter=68ea11a3-a3a4-4397-a2e0-bb457972be5d", "https://research.libraries.wsu.edu" );
-
-	t.false( url );
-	t.end();
-} );
-
-test( "A /xmlui/search-filter? research.libraries.wsu.edu path should report as false.", function( t ) {
-	var url = app.get_url( "https://research.libraries.wsu.edu/xmlui/search-filter?filtertype=morethings", source_uri );
-
-	t.false( url );
-	t.end();
-} );
-
-test( "A relative /xmlui/search-filter? research.libraries.wsu.edu path should report as false.", function( t ) {
-	var url = app.get_url( "xmlui/search-filter?filtertype=morethings", "https://research.libraries.wsu.edu" );
-
-	t.false( url );
-	t.end();
-} );
-
-test( "A /xmlui/discover path on research.libraries.wsu.edu with no additional data should be allowed.", function( t ) {
-	var url = app.get_url( "https://research.libraries.wsu.edu/xmlui/discover/", source_uri );
-
-	t.equal( url, "https://research.libraries.wsu.edu/xmlui/discover/" );
-	t.end();
-} );
-
-test( "A /catalog/product_compare path on Magento stores should report as false.", function( t ) {
-	var url = app.get_url( "https://oc.store.wsu.edu/catalog/product_compare/add/product/33/uenc/aHR0cHM6Ly9vYy5zdG9yZS53c3UuZWR1L3RyYWluaW5nLW1hdGVyaWFscy9ib29rcy5odG1sP3A9Mg,,/form_key/iC2lOjHe5TVjOrON/", source_uri );
-
-	t.false( url );
-	t.end();
-} );
-
-test( "A wishlist path on Magento stores should report as false.", function( t ) {
-	let url = app.get_url( "https://oc.store.wsu.edu/wishlist/index/add/product/34/form_key/EQDLDtfQfbMoMIk9/", source_uri );
-
-	t.false( url );
-	t.end();
-} );
-
-test( "A path starting with /ourstory/index.php?title=Special: on wsm.wsu.edu should report as false.", function( t ) {
-	var url = app.get_url( "http://wsm.wsu.edu/ourstory/index.php?title=Special:WhatLinksHere/Geology_Field_Trip", source_uri );
-
-	t.false( url );
-	t.end();
-} );
-
-test( "A WSM URL should be stripped of action query parameters.", function( t ) {
-	var url = app.get_url( "http://wsm.wsu.edu/ourstory/index.php?title=HelloWorld&action=nothing", source_uri );
-
-	t.equal( url, "http://wsm.wsu.edu/ourstory/index.php?title=HelloWorld" );
-	t.end();
-} );
-
-test( "A WSM URL should be stripped of redlink query parameters.", function( t ) {
-	var url = app.get_url( "http://wsm.wsu.edu/ourstory/index.php?title=HelloWorld&redlink=1", source_uri );
-
-	t.equal( url, "http://wsm.wsu.edu/ourstory/index.php?title=HelloWorld" );
-	t.end();
-} );
-
-test( "A WSM URL should be stripped of printable query parameters.", function( t ) {
-	var url = app.get_url( "http://wsm.wsu.edu/ourstory/index.php?title=HelloWorld&printable=yes", source_uri );
-
-	t.equal( url, "http://wsm.wsu.edu/ourstory/index.php?title=HelloWorld" );
-	t.end();
-} );
-
-test( "A WSM URL should be stripped of oldid query parameters.", function( t ) {
-	var url = app.get_url( "http://wsm.wsu.edu/ourstory/index.php?title=HelloWorld&oldid=1234", source_uri );
-
-	t.equal( url, "http://wsm.wsu.edu/ourstory/index.php?title=HelloWorld" );
-	t.end();
-} );
-
-test( "A WSM URL should be stripped of multiple blocked query parameters.", function( t ) {
-	var url = app.get_url( "http://wsm.wsu.edu/ourstory/index.php?title=HelloWorld&action=test&printable=yes&redlink=1&oldid=1234", source_uri );
-
-	t.equal( url, "http://wsm.wsu.edu/ourstory/index.php?title=HelloWorld" );
-	t.end();
-} );
-
-test( "A digital exchibits URL should be stripped of multiple blocked query parameters.", function( t ) {
-	var url = app.get_url( "http://digitalexhibits.libraries.wsu.edu/items/browse?tags=France&sort_field=Dublin+Core%2CCreator&output=omeka-json", source_uri );
-
-	t.equal( url, "http://digitalexhibits.libraries.wsu.edu/items/browse?tags=France" );
-	t.end();
-} );
-
-test( "An alumni URL without query parameters should not generate any errors.", function( t ) {
-	let url = app.get_url( "http://alumni.wsu.edu", source_uri );
-
-	t.equal( url, "http://alumni.wsu.edu/" );
-	t.end();
-} );
-
-test( "A robosub.eecs.wsu.edu scan should exclude the /wiki/ path.", function( t ) {
-	let url = app.get_url( "http://robosub.eecs.wsu.edu/wiki/test", source_uri );
-
-	t.false( url );
-	t.end();
-} );
-
-test( "A robosub.eecs.wsu.edu scan should not exclude the /not-a-wiki/ path.", function( t ) {
-	let url = app.get_url( "http://robosub.eecs.wsu.edu/not-a-wiki/test", source_uri );
-
-	t.equal( url, "http://robosub.eecs.wsu.edu/not-a-wiki/test" );
-	t.end();
-} );
+} )
