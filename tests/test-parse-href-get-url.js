@@ -26,13 +26,30 @@ var app = new ParseHref( {
 		"xls",
 		"doc",
 		"png"
-	]
+	],
+
+	// Domain rules
+	domain_rules: {
+		"www.test.wsu.edu": {
+			canonical: {
+				hostname: "test.wsu.edu",
+				protocol: "https"
+			}
+		}
+	}
 } );
 
 test( "A standard URL from an allowed top level domain", function( t ) {
 	var url = app.get_url( "https://wsu.edu/about/", source_uri );
 
 	t.equal( url, "https://wsu.edu/about/" );
+	t.end();
+} );
+
+test( "A URL with a hostname and protocol that has a canonical alternative", function( t ) {
+	var url = app.get_url( "http://www.test.wsu.edu/about/", source_uri );
+
+	t.equal( url, "https://test.wsu.edu/about/" );
 	t.end();
 } );
 
