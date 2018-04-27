@@ -186,28 +186,28 @@ test( "A path starting with excluded start text for a domain should report as fa
 	t.end();
 } );
 
-test( "A path containing excluded text for a domain should report as false.", function ( t ) {
+test( "A path containing excluded text for a domain should report as false.", function( t ) {
 	let url = app.get_url( "https://test.wsu.edu/test/single-exclude-text/another-path/" );
 
 	t.false( url );
 	t.end();
 } );
 
-test( "A path containing excluded start text, but not starting with it, should return the URL.", function ( t ) {
+test( "A path containing excluded start text, but not starting with it, should return the URL.", function( t ) {
 	let url = app.get_url( "https://test.wsu.edu/test/single-exclude-path/another-path/" );
 
 	t.equal( url, "https://test.wsu.edu/test/single-exclude-path/another-path/" );
 	t.end();
 } );
 
-test( "A path starting with global excluded start text should report as false.", function ( t ) {
+test( "A path starting with global excluded start text should report as false.", function( t ) {
 	let url = app.get_url( "https://test.wsu.edu/global-exclude-path/another-path/" );
 
 	t.false( url );
 	t.end();
 } );
 
-test( "A path containing globally excluded text should report as false.", function ( t ) {
+test( "A path containing globally excluded text should report as false.", function( t ) {
 	let url = app.get_url( "https://test.wsu.edu/test/global-contains-text/another-path/" );
 
 	t.false( url );
@@ -219,4 +219,4 @@ test( "A pathj containing bad parameters identified for a domain should remove t
 
 	t.equal( url, "https://test.wsu.edu/test/?one=keep&good_param=keep" );
 	t.end();
-} )
+} );
