@@ -19,7 +19,16 @@
 			"canonical": {
 				"hostname": "example.com",
 				"protocol": "https"
-			}
+			},
+			"exclude_by": {
+				"starts_with": [
+					"/catalog/product_compare",
+				],
+				"contains": [
+					"/invalid-path/"
+				]
+			},
+			"bad_params": "(action|redlink|printable|oldid)"
 		}
 	}
 }

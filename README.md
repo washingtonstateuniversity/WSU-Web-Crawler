@@ -32,9 +32,60 @@ START_URLS="https://root.domain"
 * `ES_HOST` is the hostname of an Elasticsearch instance.
 * `ES_URL_INDEX` is the name of the index where URL records should be stored.
 * `LOCK_KEY` is the key attached to a single crawler instance. This can be used to run multiple crawlers on the same Elasticsearch data.
-* `ROOT_DOMAINS` is a comma separated list of root domains that are allowed to be crawled.
-* `SKIP_DOMAINS` is a comma separated list of subdomains that should be skipped.
 * `START_URLS` is a comma separated list of URLs that should be used to populate the initial Elasticsearch setup.
+
+## HREF parser configuration
+
+`ParseHref()` receives a full HREF value and determines if it should be scanned by the crawler and modifies it as necessary. This relies on a parser configuration file that provides information about your domains.
+
+The `parse-config-sample.json` file is included as an example in this repository and contains this structure:
+
+```
+{
+	"allowed_root_domains": [
+		"example.com"
+	],
+	"flagged_domains": [
+		"noscan.example.com",
+		"secret.example.com"
+	],
+	"flagged_extensions": [
+		"jpg",
+		"jpeg",
+		"gif",
+		"png",
+		"exe",
+		"zip"
+	],
+	"domain_rules": {
+		"www.example.com": {
+			"canonical": {
+				"hostname": "example.com",
+				"protocol": "https"
+			},
+			"exclude_by": {
+				"starts_with": [
+					"/catalog/product_compare",
+				],
+				"contains": [
+					"/invalid-path/"
+				]
+			},
+			"bad_params": "(action|redlink|printable|oldid)"
+		}
+	}
+}
+```
+
+* `allowed_root_domains` is an array of root domains that should be scanned.
+* `flagged_domains` is an array of domains that should be skipped.
+* `flagged_extensions` is an array of file extensions that should be skipped.
+* `domain_rules` contains an object for each domain that has special considerations.
+    * `canonical`, a property of the domain, contains the canonical `hostname` and `protocol` properties for that domain.
+	* `exclude_by`, a property of the domain, provides arrays of patterns (`exclude_by` or `contains`) that should cause an HREF to be skipped.
+	* `bad_params`, a property of the domain, provides a regex string of query parameters that should cause an HREF to be skipped.
+
+An individual domain requires a configuration in `domain_rules` only if that domain rule has special considerations that the crawler should account for.
 
 ## Schema
 
