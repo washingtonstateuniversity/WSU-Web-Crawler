@@ -4,6 +4,18 @@ var ParseHref = require( "./lib/parse-href" );
 var es = require( "elasticsearch" );
 var util = require( "util" );
 
+try {
+	var parse_config = require( "./parse-config.json" );
+} catch ( error ) {
+	util.log( error );
+	util.log( "Error loading parse_config.json. Starting crawl with no exclusions." );
+	var parse_config = {
+		allowed_root_domains: [],
+		flagged_domains: [],
+		flagged_extensions: [],
+	};
+}
+
 require( "dotenv" ).config();
 
 var wsu_web_crawler = {
@@ -18,17 +30,7 @@ var wsu_web_crawler = {
 
 wsu_web_crawler.lock_key = process.env.LOCK_KEY;
 
-var parse_href = new ParseHref( {
-
-	// These top level domains are allowed to be scanned by the crawler.
-	allowed_domains: process.env.ROOT_DOMAINS.split( "," ),
-
-	// These subdomains are flagged to not be scanned.
-	flagged_domains: process.env.SKIP_DOMAINS.split( "," ),
-
-	// These file extensions are flagged to not be scanned.
-	flagged_extensions: [ "jpg", "jpeg", "gif", "png", "exe", "zip" ]
-} );
+var parse_href = new ParseHref( parse_config );
 
 /**
  * Retrieve a new instance of a configured Elasticsearch client.

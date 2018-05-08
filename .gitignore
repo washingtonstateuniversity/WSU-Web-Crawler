@@ -2,4 +2,5 @@ node_modules
 .env
 *.log
 build-package
+parse-config.json
 wsu-web-crawler.tar

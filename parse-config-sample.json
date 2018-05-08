@@ -1,0 +1,34 @@
+{
+	"allowed_root_domains": [
+		"example.com"
+	],
+	"flagged_domains": [
+		"noscan.example.com",
+		"secret.example.com"
+	],
+	"flagged_extensions": [
+		"jpg",
+		"jpeg",
+		"gif",
+		"png",
+		"exe",
+		"zip"
+	],
+	"domain_rules": {
+		"www.example.com": {
+			"canonical": {
+				"hostname": "example.com",
+				"protocol": "https"
+			},
+			"exclude_by": {
+				"starts_with": [
+					"/catalog/product_compare",
+				],
+				"contains": [
+					"/invalid-path/"
+				]
+			},
+			"bad_params": "(action|redlink|printable|oldid)"
+		}
+	}
+}

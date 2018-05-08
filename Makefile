@@ -9,6 +9,3 @@ build:
 	npm --prefix ./build-package/ install ./build-package/ --production
 	rm -rf ./build-package/etc
 	tar --create --file=wsu-web-crawler.tar build-package
-
-deploy:
-	scp wsu-web-crawler.tar wsuwp-indie-prod-01:/home/ucadmin/web-crawler/
