@@ -24,8 +24,6 @@ Environment data is stored in a `.env` file that is not part of this repository.
 ES_HOST="https://myelastic.domain"
 ES_URL_INDEX="url-storage-index"
 LOCK_KEY=1001
-ROOT_DOMAINS="root.domain"
-SKIP_DOMAINS="problem1.root.domain,problem2.root.domain"
 START_URLS="https://root.domain"
 ```
 
@@ -142,7 +140,7 @@ Run `npm install` to install all production and development dependencies.
 
 ### Start the crawler
 
-Once everything is configured, run `node data-collector.js` to start crawling.
+Once everything is configured, run `node data-collector.js` to start crawling. A long running process can be initiated with something like `nohup node data-collector.js > crawler.log &`.
 
 ### Tests
 
@@ -153,12 +151,12 @@ A basic suite of tests using [tape](https://github.com/substack/tape) is availab
 A `Makefile` is included with the package to help build and deploy the script.
 
 * Run `make build` to build a production copy that has a lighter `node_modules` footprint.
-* Run `make deploy` to push a copy to production.
 
 Manual work is still necessary on the server to replace the current running instance of the crawler.
 
-* Navigate to `/home/ucadmin/web-crawler/`
-* Extract `wsu-web-crawler.tar` into a new directory such as `url-crawler-002`
-* Copy the current `.env` file from the previous crawler directory.
-* Make sure all existing processes for the crawler are stopped.
-* Start the new crawler process from its directory with `nohup node crawl.js >> ../url-crawler.log &`
+* Navigate to your home directory.
+* Extract `wsu-web-crawler.tar` into a new directory such as `wsu-web-crawler-002`
+* Ensure a proper `.env` file exists.
+* Ensure a proper `parse-config.json` file exists.
+* Make sure all existing processes for the crawler are stopped. (e.g. `ps aux | grep node)`
+* Start the new crawler process from its directory with `nohup node data-collector.js >> ../wsu-web-crawler-20180508.log &`
