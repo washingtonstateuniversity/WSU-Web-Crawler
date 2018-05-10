@@ -395,7 +395,7 @@ function handleCrawlResult( res ) {
 			url_update.status_code = 901;
 		} else if ( "xls" === file_extension || "xlsx" === file_extension || "xlsm" === file_extension || "xlsb" === file_extension ) {
 			url_update.status_code = 902;
-		} else if ( "ppt" === file_extension || "pptx" === file_extension || "pptm" === file_extension ) {
+		} else if ( "ppt" === file_extension || "pptx" === file_extension || "pptm" === file_extension | "pps" === file_extension || "ppsx" === file_extension ) {
 			url_update.status_code = 903;
 		} else if ( /http-equiv="refresh"/i.test( res.body ) ) {
 			url_update.status_code = 301;
