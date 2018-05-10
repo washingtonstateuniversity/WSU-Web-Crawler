@@ -389,13 +389,13 @@ function handleCrawlResult( res ) {
 				// This is likely a 404, 403, 500, or other error code.
 				reject_message = res.statusCode + " response code";
 			}
-		} else if ( "pdf" === file_extension || 'application/pdf' === res.headers['content-type'] ) {
+		} else if ( "pdf" === file_extension || "application/pdf" === res.headers[ "content-type" ] ) {
 			url_update.status_code = 900;
 		} else if ( "doc" === file_extension || "docx" === file_extension ) {
 			url_update.status_code = 901;
 		} else if ( "xls" === file_extension || "xlsx" === file_extension || "xlsm" === file_extension || "xlsb" === file_extension ) {
 			url_update.status_code = 902;
-		} else if ( "ppt" === file_extension || "pptx" === file_extension || "pptm" === file_extension | "pps" === file_extension || "ppsx" === file_extension ) {
+		} else if ( "ppt" === file_extension || "pptx" === file_extension || "pptm" === file_extension || "pps" === file_extension || "ppsx" === file_extension ) {
 			url_update.status_code = 903;
 		} else if ( "mp4" === file_extension ) {
 			url_update.status_code = 904;
