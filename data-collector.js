@@ -407,6 +407,8 @@ function handleCrawlResult( res ) {
 			url_update.status_code = 907;
 		} else if ( "eps" === file_extension ) {
 			url_update.status_code = 908;
+		} else if ( "ics" === file_extension || "text/calendar" === res.headers[ "content-type" ] ) {
+			url_update.status_code = 909;
 		} else if ( /http-equiv="refresh"/i.test( res.body ) ) {
 			url_update.status_code = 301;
 
