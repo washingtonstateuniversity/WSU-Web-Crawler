@@ -659,6 +659,6 @@ function storeFoundURLs() {
 var c = getCrawler();
 
 // Handle the bulk storage of found URLs in another thread.
-setTimeout( storeFoundURLs, 2000 );
+setTimeout( storeFoundURLs, 4000 );
 setInterval( lockURL, 1000 );
 setInterval( queueLockedURLs, 1500 );
