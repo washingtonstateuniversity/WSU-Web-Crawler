@@ -222,12 +222,11 @@ function queueLockedURLs() {
 		}
 
 		if ( 1 <= response.hits.hits.length ) {
-			util.log( "queueLockedURLs: Queued " + response.hits.hits.length + " URLs for ID " + wsu_web_crawler.lock_key );
+			util.log( "Queued: " + response.hits.hits.length + " URLs for ID " + wsu_web_crawler.lock_key );
 			return true;
 		}
 
-		util.log( "queueLockedURL: No locked URLs found to queue for ID " + wsu_web_crawler.lock_key );
-		throw 0;
+		return true;
 	} ).catch( function( error ) {
 		util.log( "Error: " + error );
 		throw 0;
