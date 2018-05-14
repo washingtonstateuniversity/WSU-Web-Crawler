@@ -33,8 +33,9 @@ let startIndex = function() {
 
 	for ( let url of start_urls ) {
 		url = parse_url.parse( url );
+		let url_id = encodeURIComponent( url.href );
 
-		bulk_body.push( { index: { _index: process.env.ES_URL_INDEX, _type: "url" } } );
+		bulk_body.push( { index: { _index: process.env.ES_URL_INDEX, _type: "url", _id: url_id } } );
 		bulk_body.push( { url: url.href, domain: url.hostname } );
 	}
 
