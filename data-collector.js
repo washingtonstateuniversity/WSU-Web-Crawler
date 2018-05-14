@@ -370,7 +370,12 @@ function handleCrawlResult( res ) {
 		};
 
 		var file_extension = res.request.uri.pathname.split( "." ).pop().toLowerCase().replace( /\/$/, "" );
-		var content_type = res.headers[ "content-type" ].split( ";" ).shift().toLowerCase();
+
+		let content_type = "text/html";
+
+		if ( "undefined" !== typeof( res.headers[ "content-type" ] ) ) {
+			content_type = res.headers[ "content-type" ].split( ";" ).shift().toLowerCase();
+		}
 
 		// Watch for URLs that do not respond as a 200 OK.
 		if ( 200 !== res.statusCode ) {
