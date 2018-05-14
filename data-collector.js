@@ -281,13 +281,11 @@ function markURLUnresponsive( url ) {
  */
 function storeURLs( response ) {
 	return new Promise( function( resolve, reject ) {
-		var bulk_body = response.body;
-		var urls = response.urls;
+		const bulk_body = response.body;
+		const elastic = elasticClient();
 
-		var elastic = elasticClient();
 		elastic.bulk( { body: bulk_body } )
 			.then( function() {
-				wsu_web_crawler.stored_urls = wsu_web_crawler.stored_urls + urls.length;
 				resolve();
 			} )
 			.catch( function( error ) {
@@ -537,13 +535,14 @@ function handleCrawlResult( res ) {
 function checkURLStore() {
 	return new Promise( function( resolve, reject ) {
 		const local_store_urls = wsu_web_crawler.store_urls;
+
+		// Reset the global container for URLs to be stored while
+		// we process the data that is now local to this method.
 		wsu_web_crawler.store_urls = [];
 
 		if ( 0 === local_store_urls.length ) {
 			reject( "Bulk Result: No URLs passed to attempt lookup" );
 		}
-
-		const elastic = elasticClient();
 
 		let bulk_body = [];
 
@@ -572,7 +571,7 @@ function checkURLStore() {
  * Log the completion of individual queues.
  */
 function finishResult() {
-	util.log( "Status: " + wsu_web_crawler.scanned_verify + " scanned, " + wsu_web_crawler.locked_urls + " locked, " + wsu_web_crawler.stored_urls + " stored, " + wsu_web_crawler.store_urls.length + " to store" );
+	util.log( "Status: " + wsu_web_crawler.scanned_verify + " scanned, " + wsu_web_crawler.locked_urls + " locked, " + wsu_web_crawler.store_urls.length + " to store" );
 }
 
 /**
