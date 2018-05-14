@@ -263,7 +263,7 @@ function markURLUnresponsive( url ) {
 	.then( function() {
 		wsu_web_crawler.scanned_verify++;
 		delete wsu_web_crawler.url_queue[ url ];
-		util.log( "URL marked unresponsive: " + url );
+		util.log( "Unresponsive URL: " + url );
 	} )
 	.catch( function( error ) {
 
