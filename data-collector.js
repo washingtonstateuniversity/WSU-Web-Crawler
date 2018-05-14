@@ -370,6 +370,7 @@ function handleCrawlResult( res ) {
 		};
 
 		var file_extension = res.request.uri.pathname.split( "." ).pop().toLowerCase().replace( /\/$/, "" );
+		var content_type = res.headers[ "content-type" ].split( ";" ).shift().toLowerCase();
 
 		// Watch for URLs that do not respond as a 200 OK.
 		if ( 200 !== res.statusCode ) {
@@ -389,27 +390,27 @@ function handleCrawlResult( res ) {
 				// This is likely a 404, 403, 500, or other error code.
 				reject_message = res.statusCode + " response code";
 			}
-		} else if ( "pdf" === file_extension || "application/pdf" === res.headers[ "content-type" ] ) {
+		} else if ( "pdf" === file_extension || "application/pdf" === content_type ) {
 			url_update.status_code = 900;
 		} else if ( "doc" === file_extension || "docx" === file_extension ) {
 			url_update.status_code = 901;
-		} else if ( "xls" === file_extension || "xlsx" === file_extension || "xlsm" === file_extension || "xlsb" === file_extension ) {
+		} else if ( "xls" === file_extension || "xlsx" === file_extension || "xlsm" === file_extension || "xlsb" === file_extension || "xlt" === file_extension || "csv" === file_extension ) {
 			url_update.status_code = 902;
 		} else if ( "ppt" === file_extension || "pptx" === file_extension || "pptm" === file_extension || "pps" === file_extension || "ppsx" === file_extension ) {
 			url_update.status_code = 903;
-		} else if ( "mp4" === file_extension ) {
+		} else if ( "mp4" === file_extension || "mov" === file_extension ) {
 			url_update.status_code = 904;
-		} else if ( "mp3" === file_extension ) {
+		} else if ( "mp3" === file_extension || "ram" === file_extension ) {
 			url_update.status_code = 905;
 		} else if ( "swf" === file_extension ) {
 			url_update.status_code = 906;
-		} else if ( "csv" === file_extension ) {
+		} else if ( "txt" === file_extension ) {
 			url_update.status_code = 907;
 		} else if ( "eps" === file_extension ) {
 			url_update.status_code = 908;
-		} else if ( "ics" === file_extension || "text/calendar" === res.headers[ "content-type" ] ) {
+		} else if ( "ics" === file_extension || "text/calendar" === content_type ) {
 			url_update.status_code = 909;
-		} else if ( "tex" === file_extension ) {
+		} else if ( "tex" === file_extension || "sty" === file_extension ) {
 			url_update.status_code = 910;
 		} else if ( /http-equiv="refresh"/i.test( res.body ) ) {
 			url_update.status_code = 301;
