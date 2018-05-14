@@ -242,11 +242,12 @@ function markURLUnresponsive( url ) {
 
 	var elastic = elasticClient();
 	var d = new Date();
+	const url_id = encodeURIComponent( url );
 
 	elastic.update( {
 		index: process.env.ES_URL_INDEX,
 		type: "url",
-		id: wsu_web_crawler.url_queue[ url ].id,
+		id: url_id,
 		body: {
 			doc: {
 				identity: "unknown",
@@ -309,13 +310,14 @@ function updateURLData( url, data ) {
 		return;
 	}
 
-	var elastic = elasticClient();
-	var d = new Date();
+	const elastic = elasticClient();
+	const d = new Date();
+	const url_id = encodeURIComponent( url );
 
 	elastic.update( {
 		index: process.env.ES_URL_INDEX,
 		type: "url",
-		id: wsu_web_crawler.url_queue[ url ].id,
+		id: url_id,
 		body: {
 			doc: {
 				identity: data.identity_version,
@@ -534,65 +536,35 @@ function handleCrawlResult( res ) {
  */
 function checkURLStore() {
 	return new Promise( function( resolve, reject ) {
-		var local_store_urls = wsu_web_crawler.store_urls;
+		const local_store_urls = wsu_web_crawler.store_urls;
 		wsu_web_crawler.store_urls = [];
 
 		if ( 0 === local_store_urls.length ) {
 			reject( "Bulk Result: No URLs passed to attempt lookup" );
 		}
 
-		var elastic = elasticClient();
-		elastic.search( {
-			index: process.env.ES_URL_INDEX,
-			type: "url",
-			body: {
-				size: local_store_urls.length,
-				query: {
-					bool: {
-						filter: {
-							terms: {
-								url: local_store_urls
-							}
-						}
-					}
-				}
-			}
-		} ).then( function( resp ) {
-			var found_urls = local_store_urls.length;
-			var local_urls = local_store_urls;
-			local_store_urls = null;
+		const elastic = elasticClient();
 
-			if ( 0 !== resp.hits.hits.length ) {
-				for ( var j = 0, y = resp.hits.hits.length; j < y; j++ ) {
-					var index = local_urls.indexOf( resp.hits.hits[ j ]._source.url );
-					if ( -1 < index ) {
-						local_urls.splice( index, 1 );
-					}
-				}
+		let bulk_body = [];
+
+		for ( var i = 0, x = local_store_urls.length; i < x; i++ ) {
+			if ( "undefined" === typeof local_store_urls[ i ] ) {
+				continue;
 			}
 
-			var bulk_body = [];
+			const url = parse_url.parse( local_store_urls[ i ] );
+			const id = encodeURIComponent( local_store_urls[ i ] );
 
-			for ( var i = 0, x = found_urls; i < x; i++ ) {
-				if ( "undefined" === typeof local_urls[ i ] ) {
-					continue;
-				}
+			bulk_body.push( { index: { _index: process.env.ES_URL_INDEX, _type: "url", _id: id } } );
+			bulk_body.push( { "url": local_store_urls[ i ], domain: url.hostname } );
+		}
 
-				var url = parse_url.parse( local_urls[ i ] );
-
-				bulk_body.push( { index: { _index: process.env.ES_URL_INDEX, _type: "url" } } );
-				bulk_body.push( { url: local_urls[ i ], domain: url.hostname } );
-			}
-
-			if ( 0 !== bulk_body.length ) {
-				util.log( "Bulk Result: Stored " + local_urls.length + " new URLs" );
-				resolve( { body: bulk_body, urls: local_urls } );
-			} else {
-				reject( "Bulk Result: No new URLs found" );
-			}
-		} ).catch( function( error ) {
-			reject( error.message );
-		} );
+		if ( 0 !== bulk_body.length ) {
+			util.log( "Bulk Result: Sending " + local_store_urls.length + " URLs to ElasticSearch" );
+			resolve( { body: bulk_body, urls: local_store_urls } );
+		} else {
+			reject( "Bulk Result: No URLs found to send to ElasticSearch" );
+		}
 	} );
 }
 
