@@ -398,7 +398,7 @@ function handleCrawlResult( res ) {
 			url_update.status_code = 902;
 		} else if ( "ppt" === file_extension || "pptx" === file_extension || "pptm" === file_extension || "pps" === file_extension || "ppsx" === file_extension ) {
 			url_update.status_code = 903;
-		} else if ( "mp4" === file_extension ) {
+		} else if ( "mp4" === file_extension || "mov" === file_extension ) {
 			url_update.status_code = 904;
 		} else if ( "mp3" === file_extension || "ram" === file_extension ) {
 			url_update.status_code = 905;
