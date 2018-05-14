@@ -135,7 +135,7 @@ In most cases, the standard status code returned for a request is logged. For so
 * Video files that respond with `200` are logged with the status code of `904`.
 * Audio files that respond with `200` are logged with the status code of `905`.
 * Flash files that respond with `200` are logged with the status code of `906`.
-* CSV files that respond with `200` are logged with the status code of `907`.
+* Text files that respond with `200` are logged with the status code of `907`.
 * EPS files that respond with `200` are logged with the status code of `908`.
 * ICS (calendar) files that respond with `200` are logged with the status code of `909`.
 * LaTeX files that respond with `200` are logged with the status code of `910`.
