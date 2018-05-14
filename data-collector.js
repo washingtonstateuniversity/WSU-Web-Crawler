@@ -369,7 +369,7 @@ function handleCrawlResult( res ) {
 			anchors: []
 		};
 
-		var file_extension = res.request.uri.pathname.split( "." ).pop().toLowerCase();
+		var file_extension = res.request.uri.pathname.split( "." ).pop().toLowerCase().replace( /\/$/, "" );
 
 		// Watch for URLs that do not respond as a 200 OK.
 		if ( 200 !== res.statusCode ) {
