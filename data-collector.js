@@ -410,7 +410,7 @@ function handleCrawlResult( res ) {
 			url_update.status_code = 908;
 		} else if ( "ics" === file_extension || "text/calendar" === content_type ) {
 			url_update.status_code = 909;
-		} else if ( "tex" === file_extension ) {
+		} else if ( "tex" === file_extension || "sty" === file_extension ) {
 			url_update.status_code = 910;
 		} else if ( /http-equiv="refresh"/i.test( res.body ) ) {
 			url_update.status_code = 301;
