@@ -400,7 +400,7 @@ function handleCrawlResult( res ) {
 			url_update.status_code = 903;
 		} else if ( "mp4" === file_extension ) {
 			url_update.status_code = 904;
-		} else if ( "mp3" === file_extension ) {
+		} else if ( "mp3" === file_extension || "ram" === file_extension ) {
 			url_update.status_code = 905;
 		} else if ( "swf" === file_extension ) {
 			url_update.status_code = 906;
